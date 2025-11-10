@@ -7,11 +7,18 @@
 //supi nak try pull
 
 
-//testtest
-$mae_balance = "0.00";
-$personal_saver_balance = "0.00";
-$user_name = "user 1";
+<?php
+include 'db_connect.php';
+
+$query = "SELECT * FROM users WHERE user_id = 1";
+$result = mysqli_query($conn, $query);
+$data = mysqli_fetch_assoc($result);
+
+$mae_balance = $data['mae_balance'];
+$personal_saver_balance = $data['personal_saver_balance'];
+$user_name = $data['user_name'];
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
