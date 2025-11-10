@@ -4,6 +4,7 @@
 // Example placeholders for database connection (you’ll replace later)
 //test
 //test2
+//supi nak try pull
 
 
 //testtest
