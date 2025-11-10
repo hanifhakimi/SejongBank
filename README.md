@@ -1,0 +1,2 @@
+# SejongBank
+Software Engineering Project
