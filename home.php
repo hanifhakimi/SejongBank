@@ -51,6 +51,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,7 +71,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
             justify-content: space-between;
             align-items: center;
             padding: 15px 50px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .header-left h1 {
@@ -112,7 +113,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
             background-color: #fff;
             border-radius: 8px;
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         h2 {
@@ -131,7 +132,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
             border: 1px solid #ddd;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
         }
 
         .card-title {
@@ -157,7 +158,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
             margin-top: 40px;
             padding: 40px 0;
             background-color: #fff;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
         }
 
         .footer h3 {
@@ -170,6 +171,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
         }
     </style>
 </head>
+
 <body>
 
     <div class="header">
@@ -186,10 +188,11 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
     <div class="nav">
         <a href="#">ACCOUNTS</a>
         <a href="#">CARDS</a>
-        <a href="#">FIXED DEPOSIT</a>
-        <a href="#">LOAN/FINANCING</a>
+        <a href="deposit.php">DEPOSIT</a>
+        <a href="withdraw.php">WITHDRAW</a>
         <a href="#">WEALTH</a>
     </div>
+
 
     <div class="container">
         <h2>Savings / Current Accounts</h2>
@@ -208,7 +211,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
         </div>
     </div>
 
-        <div class="container" style="margin-top: 20px;">
+    <div class="container" style="margin-top: 20px;">
         <h2>Quick Actions</h2>
 
         <div style="display: flex; gap: 20px; justify-content: space-between;">
@@ -283,4 +286,5 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
     </div>
 
 </body>
+
 </html>
