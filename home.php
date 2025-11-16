@@ -1,25 +1,54 @@
 <?php
-//test1 : updating repositories
-//test2 : updating repositories - HP
-// Example placeholders for database connection (you’ll replace later)
-//test
-//test2
-//supi nak try pull
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+// Replace your $user_id = 1 with:
+$user_id = $_SESSION['user_id'];
+?>
 
 
 <?php
 include 'db_connect.php';
 
-$query = "SELECT * FROM users WHERE user_id = 1";
-$result = mysqli_query($conn, $query);
-$data = mysqli_fetch_assoc($result);
+/*-------------------------------------
+   1. Fetch user full name
+-------------------------------------*/
+$query_user = "SELECT full_name FROM users WHERE user_id = $user_id";
+$result_user = mysqli_query($conn, $query_user);
+$user_data = mysqli_fetch_assoc($result_user);
 
-$mae_balance = $data['mae_balance'];
-$personal_saver_balance = $data['personal_saver_balance'];
-$user_name = $data['user_name'];
+$user_name = $user_data ? $user_data['full_name'] : "User";
+
+/*-------------------------------------
+   2. Fetch account balances
+-------------------------------------*/
+$query_accounts = "SELECT account_type, balance, account_number 
+                   FROM accounts 
+                   WHERE user_id = $user_id";
+$result_accounts = mysqli_query($conn, $query_accounts);
+
+$sejong_wallet_balance = "0.00";
+$sejong_wallet_number = "N/A";
+
+$personal_saver_balance = "0.00";
+$personal_saver_number = "N/A";
+
+
+while ($row = mysqli_fetch_assoc($result_accounts)) {
+    if ($row['account_type'] === "Sejong Wallet") {
+        $sejong_wallet_balance = $row['balance'];
+        $sejong_wallet_number = $row['account_number'];
+    }
+    if ($row['account_type'] === "Personal Saver Account-i") {
+        $personal_saver_balance = $row['balance'];
+        $personal_saver_number = $row['account_number'];
+    }
+}
+
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,13 +59,11 @@ $user_name = $data['user_name'];
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            /* 🔴 Changed background to a red-white gradient */
             background: linear-gradient(135deg, #ff4d4d 0%, #ffffff 100%);
             color: #333;
             min-height: 100vh;
         }
 
-        /* Header Section */
         .header {
             background-color: #fff;
             display: flex;
@@ -59,7 +86,6 @@ $user_name = $data['user_name'];
             font-weight: bold;
         }
 
-        /* Sub-navigation bar */
         .nav {
             background-color: #fff;
             display: flex;
@@ -80,7 +106,6 @@ $user_name = $data['user_name'];
             border-bottom: 3px solid #ffcc00;
         }
 
-        /* Accounts Section */
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -127,7 +152,6 @@ $user_name = $data['user_name'];
             margin-top: 20px;
         }
 
-        /* Footer Section */
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -144,41 +168,18 @@ $user_name = $data['user_name'];
             color: #777;
             font-size: 14px;
         }
-
-        /* Right Sidebar (Optional) */
-        .sidebar {
-            position: fixed;
-            right: 0;
-            top: 0;
-            width: 300px;
-            height: 100vh;
-            background-color: #111;
-            color: white;
-            padding: 20px;
-        }
-
-        .sidebar h4 {
-            margin-top: 60px;
-            color: #ffcc00;
-        }
-
-        .username {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #fff;
-        }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="header-left">
-            <h1>SejongBank | SJB</h1>
+            <h1>SejongBank | Welcome, <?php echo $user_name; ?></h1>
         </div>
         <div class="header-right">
             <a href="#">INBOX</a>
             <a href="#">SETTINGS</a>
-            <a href="#">LOGOUT</a>
+            <a href="logout.php">LOGOUT</a>
         </div>
     </div>
 
@@ -194,18 +195,87 @@ $user_name = $data['user_name'];
         <h2>Savings / Current Accounts</h2>
         <div class="accounts">
             <div class="card">
-                <div class="card-title">MAE Wallet</div>
-                <div class="card-number">000111222333</div>
-                <div class="balance">RM <?php echo $mae_balance; ?></div>
+                <div class="card-title">Sejong Wallet</div>
+                <div class="card-number"><?php echo $sejong_wallet_number; ?></div>
+                <div class="balance">RM <?php echo number_format($sejong_wallet_balance, 2); ?></div>
             </div>
 
             <div class="card">
                 <div class="card-title">Personal Saver Account-i</div>
-                <div class="card-number">1122233344455</div>
-                <div class="balance">RM <?php echo $personal_saver_balance; ?></div>
+                <div class="card-number"><?php echo $personal_saver_number; ?></div>
+                <div class="balance">RM <?php echo number_format($personal_saver_balance, 2); ?></div>
             </div>
         </div>
     </div>
+
+        <div class="container" style="margin-top: 20px;">
+        <h2>Quick Actions</h2>
+
+        <div style="display: flex; gap: 20px; justify-content: space-between;">
+
+            <!-- Tabung -->
+            <a href="tabung.php" style="
+                flex: 1;
+                text-align: center;
+                background: #004b87;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-decoration: none;
+                font-weight: bold;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                Tabung (Piggy Bank)
+            </a>
+
+            <!-- Bill Payment -->
+            <a href="bill_payment.php" style="
+                flex: 1;
+                text-align: center;
+                background: #ff6b6b;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-decoration: none;
+                font-weight: bold;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                Bill Payment
+            </a>
+
+            <!-- Currency Converter -->
+            <a href="currency_converter.php" style="
+                flex: 1;
+                text-align: center;
+                background: #ffaa00;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-decoration: none;
+                font-weight: bold;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                Currency Converter
+            </a>
+
+            <!-- Transaction History -->
+            <a href="transaction_history.php" style="
+                flex: 1;
+                text-align: center;
+                background: #2ecc71;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-decoration: none;
+                font-weight: bold;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                Transaction History
+            </a>
+
+        </div>
+    </div>
+
 
     <div class="footer">
         <h3>Get more from your money!</h3>
