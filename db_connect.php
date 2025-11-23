@@ -1,7 +1,7 @@
 <?php
-$host = "localhost";
-$user = "root";      // default for XAMPP
-$pass = "";          // default password is empty
+$host = "172.30.1.85";
+$user = "remote_user";      // default for XAMPP
+$pass = "Software123";          // default password is empty
 $dbname = "sejongbank";  // your actual database name
 
 $conn = mysqli_connect($host, $user, $pass, $dbname);
