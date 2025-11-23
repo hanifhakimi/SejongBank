@@ -38,14 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Deduct amount
     $update = "UPDATE accounts 
-               SET balance = balance - $amount 
-               WHERE account_id = $account_id AND user_id = $user_id";
+           SET balance = balance - $amount 
+           WHERE account_id = $account_id AND user_id = $user_id";
     mysqli_query($conn, $update);
 
     // Insert transaction
     $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
-                  VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
+              VALUES ($user_id, $account_id, 'Withdraw', $amount, 'Account withdrawal')";
     mysqli_query($conn, $insert_tx);
+
+
 
     echo "<script>alert('Withdrawal successful!'); window.location='home.php';</script>";
     exit;
@@ -54,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>SejongBank | Withdrawal</title>
@@ -73,14 +76,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(255, 255, 255, 0.88);
             padding: 40px;
             border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
             animation: fadeIn 0.9s ease;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .logo {
@@ -110,7 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #333;
         }
 
-        select, input {
+        select,
+        input {
             width: 100%;
             padding: 14px;
             margin-top: 8px;
@@ -121,10 +132,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: 0.3s;
         }
 
-        select:focus, input:focus {
+        select:focus,
+        input:focus {
             border-color: #004b87;
             outline: none;
-            box-shadow: 0 0 6px rgba(0,75,135,0.3);
+            box-shadow: 0 0 6px rgba(0, 75, 135, 0.3);
         }
 
         button {
@@ -144,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         button:hover {
             background: #00345d;
             transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
         }
 
         .back {
@@ -169,34 +181,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
-<div class="withdraw-container">
-    <div class="logo">Sejong<span>Bank</span></div>
-    <h2>Withdraw Money</h2>
+    <div class="withdraw-container">
+        <div class="logo">Sejong<span>Bank</span></div>
+        <h2>Withdraw Money</h2>
 
-    <form method="POST">
+        <form method="POST">
 
-        <label>Select Account</label>
-        <select name="account_id" required>
-            <option disabled selected>-- Choose account --</option>
+            <label>Select Account</label>
+            <select name="account_id" required>
+                <option disabled selected>-- Choose account --</option>
 
-            <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                <option value="<?php echo $row['account_id']; ?>">
-                    <?php echo $row['account_type']; ?>
-                    (RM <?php echo number_format($row['balance'], 2); ?>)
-                </option>
-            <?php endwhile; ?>
-        </select>
+                <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                    <option value="<?php echo $row['account_id']; ?>">
+                        <?php echo $row['account_type']; ?>
+                        (RM <?php echo number_format($row['balance'], 2); ?>)
+                    </option>
+                <?php endwhile; ?>
+            </select>
 
-        <label>Amount (RM)</label>
-        <input type="number" step="0.01" min="0" name="amount" placeholder="Enter amount to withdraw" required>
+            <label>Amount (RM)</label>
+            <input type="number" step="0.01" min="0" name="amount" placeholder="Enter amount to withdraw" required>
 
-        <button type="submit">Confirm Withdrawal</button>
-    </form>
+            <button type="submit">Confirm Withdrawal</button>
+        </form>
 
-    <div class="back">
-        <a href="home.php">← Back to Home</a>
+        <div class="back">
+            <a href="home.php">← Back to Home</a>
+        </div>
     </div>
-</div>
 
 </body>
+
 </html>
