@@ -247,7 +247,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
             </a>
 
             <!-- Currency Converter -->
-            <a href="currency_converter.php" style="
+            <a href="currency.php" style="
                 flex: 1;
                 text-align: center;
                 background: #ffaa00;
