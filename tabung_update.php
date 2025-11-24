@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     mysqli_query($conn, $update);
 
-    header("Location: piggybank.php");
+    header("Location: tabung.php");
     exit;
 }
 ?>

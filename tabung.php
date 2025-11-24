@@ -69,9 +69,9 @@ $result = mysqli_query($conn, $query);
 <body>
 
 <div class="container">
-    <h2>PiggyBank</h2>
+    <h2>Tabung</h2>
 
-    <a href="piggybank_add.php" class="add-btn">+ Create New PiggyBank</a>
+    <a href="tabung_add.php" class="add-btn">+ Create New Tabung</a>
 
     <table>
         <tr>
@@ -89,7 +89,7 @@ $result = mysqli_query($conn, $query);
             <td><?php echo number_format($p['current_amount'], 2); ?></td>
             <td><?php echo $p['deadline']; ?></td>
             <td>
-                <a href="piggybank_update.php?id=<?php echo $p['piggybank_id']; ?>" class="action">Add Money</a>
+                <a href="tabung_update.php?id=<?php echo $p['piggybank_id']; ?>" class="action">Add Money</a>
             </td>
         </tr>
         <?php } ?>
