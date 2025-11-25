@@ -1,5 +1,5 @@
 <?php
-$host = "172.30.1.55";
+$host = "localhost";
 $user = "remote_user";
 $pass = "Software123";
 $dbname = "sejongbank";
