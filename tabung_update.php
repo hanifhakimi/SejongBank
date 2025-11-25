@@ -36,18 +36,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 </style>
 </head>
-<body>
+<body style="
+    margin:0;
+    font-family:Arial;
+    background: linear-gradient(135deg, #ff4d4d 0%, #ffffff 100%);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+">
 
-<div class="container">
-    <h2>Add Money to Tabung</h2>
+<div style="
+    width:600px;
+    background:#fff;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+">
+
+    <h2 style="color:#ffaa00; text-align:center; margin-bottom:25px;">Add Money to Tabung</h2>
 
     <form method="POST">
         <label>Amount (KRW)</label>
-        <input type="number" step="0.01" name="amount" required>
+        <input type="number" step="0.01" name="amount" required
+               style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; margin-top:10px;">
 
-        <button type="submit">Add</button>
+        <button type="submit" style="
+            width:100%;
+            margin-top:25px;
+            background:#ffaa00;
+            padding:14px;
+            border:none;
+            color:white;
+            font-weight:bold;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:15px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.2);
+        ">Add Money</button>
     </form>
+
 </div>
 
 </body>
+
+
 </html>
