@@ -1,8 +1,8 @@
 <?php
 $host = "172.30.1.55";
-$user = "remote_user";      // default for XAMPP
-$pass = "Software123";          // default password is empty
-$dbname = "sejongbank";  // your actual database name
+$user = "remote_user";
+$pass = "Software123";
+$dbname = "sejongbank";
 
 $conn = mysqli_connect($host, $user, $pass, $dbname);
 
