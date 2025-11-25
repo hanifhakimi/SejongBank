@@ -6,12 +6,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include 'db_connect.php';
-$user_id = $_SESSION['user_id'];
 
+$user_id = (int)$_SESSION['user_id'];
 
 $query = "SELECT * FROM piggybank WHERE user_id = $user_id ORDER BY created_at DESC";
 $result = mysqli_query($conn, $query);
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -51,6 +50,7 @@ $result = mysqli_query($conn, $query);
             background: #004b87;
             color: white;
             padding: 12px;
+            text-align: left;
         }
         table td {
             padding: 10px;
@@ -58,11 +58,29 @@ $result = mysqli_query($conn, $query);
         }
 
         a.action {
+            display: inline-block;
             background: #ffaa00;
             color: white;
             padding: 8px 12px;
             border-radius: 6px;
             text-decoration: none;
+            font-size: 13px;
+            margin-right: 5px;
+        }
+
+        a.delete-btn {
+            display: inline-block;
+            background: #cccccc;
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        a.delete-btn:hover {
+            background: #ff4d4d;
+            color: #fff;
         }
     </style>
 </head>
@@ -78,18 +96,42 @@ $result = mysqli_query($conn, $query);
             <th>Name</th>
             <th>Target (RM)</th>
             <th>Saved (RM)</th>
-            <th>Deadline</th>
+            <th>Remaining Days</th>
             <th>Action</th>
         </tr>
 
-        <?php while ($p = mysqli_fetch_assoc($result)) { ?>
+        <?php while ($p = mysqli_fetch_assoc($result)) {
+
+            // Calculate remaining days
+            $remainingText = '-';
+            if (!empty($p['deadline']) && $p['deadline'] !== '0000-00-00') {
+                $today = new DateTime();
+                $deadlineDate = new DateTime($p['deadline']);
+                $diff = $today->diff($deadlineDate);
+                $days = (int)$diff->format('%r%a'); // signed days
+
+                if ($days < 0) {
+                    $remainingText = 'Deadline passed';
+                } elseif ($days == 0) {
+                    $remainingText = 'Today';
+                } else {
+                    $remainingText = $days . ' day' . ($days > 1 ? 's' : '');
+                }
+            }
+        ?>
         <tr>
-            <td><?php echo $p['piggybank_name']; ?></td>
+            <td><?php echo htmlspecialchars($p['piggybank_name']); ?></td>
             <td><?php echo number_format($p['target_amount'], 2); ?></td>
             <td><?php echo number_format($p['current_amount'], 2); ?></td>
-            <td><?php echo $p['deadline']; ?></td>
+            <td><?php echo $remainingText; ?></td>
             <td>
                 <a href="tabung_update.php?id=<?php echo $p['piggybank_id']; ?>" class="action">Add Money</a>
+
+                <a href="tabung_delete.php?id=<?php echo $p['piggybank_id']; ?>"
+                   class="delete-btn"
+                   onclick="return confirm('Are you sure you want to delete this tabung?');">
+                    Delete
+                </a>
             </td>
         </tr>
         <?php } ?>

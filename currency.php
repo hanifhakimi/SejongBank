@@ -24,13 +24,13 @@ if (isset($_POST['action'])) {
 
 // List of all available currencies
 $all_currencies = [
-    'MYR' => ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'flag' => '🇲🇾'],
-    'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'flag' => '🇺🇸'],
-    'EUR' => ['name' => 'Euro', 'symbol' => '€', 'flag' => '🇪🇺'],
-    'GBP' => ['name' => 'British Pound', 'symbol' => '£', 'flag' => '🇬🇧'],
-    'JPY' => ['name' => 'Japanese Yen', 'symbol' => '¥', 'flag' => '🇯🇵'],
-    'KRW' => ['name' => 'South Korean Won', 'symbol' => '₩', 'flag' => '🇰🇷'],
-    'CNY' => ['name' => 'Chinese Yuan', 'symbol' => '¥', 'flag' => '🇨🇳'],
+    'MYR' => ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'flag' => 'flags/MYR.png'],
+    'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'flag' => 'flags/USD.png'],
+    'EUR' => ['name' => 'Euro', 'symbol' => '€', 'flag' => 'flags/EU.png'],
+    'GBP' => ['name' => 'British Pound', 'symbol' => '£', 'flag' => 'flags/GB.png'],
+    'JPY' => ['name' => 'Japanese Yen', 'symbol' => '¥', 'flag' => 'flags/JPY.png'],
+    'KRW' => ['name' => 'South Korean Won', 'symbol' => '₩', 'flag' => 'flags/KRW.png'],
+    'CNY' => ['name' => 'Chinese Yuan', 'symbol' => '¥', 'flag' => 'flags/CN.png'],
     'SGD' => ['name' => 'Singapore Dollar', 'symbol' => 'S$', 'flag' => '🇸🇬'],
     'AUD' => ['name' => 'Australian Dollar', 'symbol' => 'A$', 'flag' => '🇦🇺'],
     'CAD' => ['name' => 'Canadian Dollar', 'symbol' => 'C$', 'flag' => '🇨🇦'],
@@ -72,7 +72,7 @@ $mock_rates = [
 ];
 
 $base_currency = 'MYR';
-$base_amount   = 1000;
+$base_amount   = 0;
 
 // Use timestamp and let JS format it in user's local time
 $last_updated_ts = time();
@@ -134,13 +134,14 @@ $last_updated_ts = time();
             margin-bottom: 15px;
         }
         
-        .flag-icon {
-            font-size: 40px;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .flag-icon img {
+            width: 42px;
+            height: 28px;
+            object-fit: cover;
+            border-radius: 6px; /* Smooth rectangle corners */
+            border: 2px solid #000000ff; /* Soft border for visibility */
+            background: #fff; /* Protect visibility for flags with white edges */
+            display: block;
         }
 
         .currency-code {
@@ -353,7 +354,10 @@ $last_updated_ts = time();
         <!-- Base Currency Card -->
         <div class="base-card">
             <div class="currency-header">
-                <div class="flag-icon"><?php echo $all_currencies[$base_currency]['flag']; ?></div>
+                <div class="flag-icon">
+                    <img src="<?php echo htmlspecialchars($all_currencies[$base_currency]['flag']); ?>" 
+                        alt="<?php echo $base_currency; ?> flag">
+                </div>
                 <div class="currency-code"><?php echo $base_currency; ?></div>
             </div>
             <input 
@@ -362,7 +366,8 @@ $last_updated_ts = time();
                 id="baseAmount" 
                 data-currency="<?php echo $base_currency; ?>" 
                 data-rate="<?php echo $mock_rates[$base_currency]; ?>"
-                value="<?php echo number_format($base_amount, 2); ?>"
+                value=""
+                placeholder="0.00"
                 oninput="handleCurrencyInput(this)"
             >
         </div>
@@ -375,7 +380,10 @@ $last_updated_ts = time();
                     $converted = $base_amount * $rate;
                 ?>
                 <div class="converted-card">
-                    <div class="flag-icon"><?php echo $all_currencies[$currency]['flag']; ?></div>
+                    <div class="flag-icon">
+                        <img src="<?php echo htmlspecialchars($all_currencies[$currency]['flag']); ?>" 
+                            alt="<?php echo $currency; ?> flag">
+                    </div>
                     <div class="currency-code"><?php echo $currency; ?></div>
                     <div class="conversion-info">
                         <input 
@@ -422,7 +430,10 @@ $last_updated_ts = time();
                         <input type="hidden" name="action" value="add">
                         <input type="hidden" name="currency" value="<?php echo $code; ?>">
                         <button type="submit" class="currency-option" style="border: none; background: none; width: 100%; text-align: left;">
-                            <div class="flag-icon"><?php echo $data['flag']; ?></div>
+                            <div class="flag-icon">
+                                 <img src="<?php echo htmlspecialchars($data['flag']); ?>" 
+                                    alt="<?php echo $code; ?> flag">
+                            </div>
                             <div class="currency-option-text">
                                 <div class="currency-option-code"><?php echo $code; ?></div>
                                 <div class="currency-option-name"><?php echo $data['name']; ?></div>

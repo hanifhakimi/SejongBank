@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <label>Tabung Name</label>
         <input type="text" name="name" required>
 
-        <label>Target Amount (KRW)</label>
+        <label>Target Amount (RM)</label>
         <input type="number" step="0.01" name="target" required>
 
         <label>Deadline</label>
