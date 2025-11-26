@@ -72,7 +72,7 @@ $mock_rates = [
 ];
 
 $base_currency = 'MYR';
-$base_amount   = 0;
+$base_amount = 0;
 
 // Use timestamp and let JS format it in user's local time
 $last_updated_ts = time();
@@ -80,6 +80,7 @@ $last_updated_ts = time();
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -91,10 +92,10 @@ $last_updated_ts = time();
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Roboto', sans-serif;
-            background: linear-gradient(90deg, rgba(255,94,98,1) 0%, rgba(255,180,178,1) 100%);
+            background: linear-gradient(90deg, rgba(255, 94, 98, 1) 0%, rgba(255, 180, 178, 1) 100%);
             padding: 20px;
             color: #000000ff;
         }
@@ -104,19 +105,19 @@ $last_updated_ts = time();
             max-width: 600px;
             margin: 0 auto;
         }
-        
+
         .header {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
         }
-        
+
         .last-updated {
             font-size: 14px;
             color: #666;
         }
-        
+
         /* Base Currency Card */
         .base-card {
             background: white;
@@ -126,21 +127,24 @@ $last_updated_ts = time();
             box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
             border: 2px solid #2196F3;
         }
-        
+
         .currency-header {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 15px;
         }
-        
+
         .flag-icon img {
             width: 42px;
             height: 28px;
             object-fit: cover;
-            border-radius: 6px; /* Smooth rectangle corners */
-            border: 2px solid #000000ff; /* Soft border for visibility */
-            background: #fff; /* Protect visibility for flags with white edges */
+            border-radius: 6px;
+            /* Smooth rectangle corners */
+            border: 2px solid #000000ff;
+            /* Soft border for visibility */
+            background: #fff;
+            /* Protect visibility for flags with white edges */
             display: block;
         }
 
@@ -149,7 +153,7 @@ $last_updated_ts = time();
             font-weight: 500;
             color: #333;
         }
-        
+
         .amount-input {
             width: 100%;
             border: none;
@@ -160,29 +164,29 @@ $last_updated_ts = time();
             outline: none;
             background: transparent;
         }
-        
+
         /* Converted Currency Cards */
         .converted-card {
             background: white;
             border-radius: 12px;
             padding: 20px 24px;
             margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
             gap: 15px;
             position: relative;
         }
-        
+
         .converted-card .flag-icon {
             font-size: 36px;
         }
-        
+
         .conversion-info {
             flex: 1;
             text-align: right;
         }
-        
+
         .converted-amount {
             font-size: 32px;
             font-weight: 700;
@@ -194,7 +198,7 @@ $last_updated_ts = time();
             text-align: right;
             outline: none;
         }
-        
+
         .exchange-rate {
             font-size: 13px;
             color: #999;
@@ -212,10 +216,11 @@ $last_updated_ts = time();
             opacity: 1;
             pointer-events: auto;
         }
-        
+
         .delete-btn {
             font-size: 20px;
-            color: #888; /* grey by default */
+            color: #888;
+            /* grey by default */
             background: none;
             border: none;
             cursor: pointer;
@@ -223,12 +228,13 @@ $last_updated_ts = time();
             line-height: 1;
             transition: color 0.2s ease, transform 0.2s ease;
         }
-        
+
         .delete-btn:hover {
-            color: #e63946; /* red on hover */
+            color: #e63946;
+            /* red on hover */
             transform: scale(1.15);
         }
-        
+
         /* Add Currency Button */
         .add-currency-btn {
             background: white;
@@ -247,11 +253,11 @@ $last_updated_ts = time();
             transition: all 0.3s;
             margin-bottom: 20px;
         }
-        
+
         .add-currency-btn:hover {
             background: #e3f2fd;
         }
-        
+
         .info-icon {
             width: 20px;
             height: 20px;
@@ -262,7 +268,7 @@ $last_updated_ts = time();
             justify-content: center;
             font-size: 12px;
         }
-        
+
         /* Modal */
         .modal {
             display: none;
@@ -271,17 +277,17 @@ $last_updated_ts = time();
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        
+
         .modal.active {
             display: flex;
         }
-        
+
         .modal-content {
             background: white;
             border-radius: 12px;
@@ -291,7 +297,7 @@ $last_updated_ts = time();
             max-height: 80vh;
             overflow-y: auto;
         }
-        
+
         .modal-header {
             font-size: 20px;
             font-weight: 700;
@@ -300,14 +306,14 @@ $last_updated_ts = time();
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .close-btn {
             font-size: 28px;
             cursor: pointer;
             color: #999;
             line-height: 1;
         }
-        
+
         .currency-option {
             padding: 15px;
             border-bottom: 1px solid #eee;
@@ -316,32 +322,49 @@ $last_updated_ts = time();
             align-items: center;
             gap: 12px;
         }
-        
+
         .currency-option:hover {
             background: #f5f5f5;
         }
-        
+
         .currency-option .flag-icon {
             font-size: 26px;
             width: 36px;
             height: 36px;
         }
-        
+
         .currency-option-text {
             flex: 1;
         }
-        
+
         .currency-option-code {
             font-weight: 700;
             font-size: 16px;
         }
-        
+
         .currency-option-name {
             font-size: 13px;
             color: #999;
         }
+
+        .back-home {
+            display: inline-block;
+            margin-top: 25px;
+            background: #004b87;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .back-home:hover {
+            background: #00345d;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -350,52 +373,40 @@ $last_updated_ts = time();
                 <!-- Filled by JS -->
             </div>
         </div>
-        
+
         <!-- Base Currency Card -->
         <div class="base-card">
             <div class="currency-header">
                 <div class="flag-icon">
-                    <img src="<?php echo htmlspecialchars($all_currencies[$base_currency]['flag']); ?>" 
+                    <img src="<?php echo htmlspecialchars($all_currencies[$base_currency]['flag']); ?>"
                         alt="<?php echo $base_currency; ?> flag">
                 </div>
                 <div class="currency-code"><?php echo $base_currency; ?></div>
             </div>
-            <input 
-                type="text" 
-                class="amount-input currency-input" 
-                id="baseAmount" 
-                data-currency="<?php echo $base_currency; ?>" 
-                data-rate="<?php echo $mock_rates[$base_currency]; ?>"
-                value=""
-                placeholder="0.00"
-                oninput="handleCurrencyInput(this)"
-            >
+            <input type="text" class="amount-input currency-input" id="baseAmount"
+                data-currency="<?php echo $base_currency; ?>" data-rate="<?php echo $mock_rates[$base_currency]; ?>"
+                value="" placeholder="0.00" oninput="handleCurrencyInput(this)">
         </div>
-        
+
         <!-- Converted Currency Cards -->
         <?php foreach ($_SESSION['selected_currencies'] as $currency): ?>
             <?php if ($currency !== $base_currency && isset($all_currencies[$currency]) && isset($mock_rates[$currency])): ?>
-                <?php 
-                    $rate = $mock_rates[$currency];
-                    $converted = $base_amount * $rate;
+                <?php
+                $rate = $mock_rates[$currency];
+                $converted = $base_amount * $rate;
                 ?>
                 <div class="converted-card">
                     <div class="flag-icon">
-                        <img src="<?php echo htmlspecialchars($all_currencies[$currency]['flag']); ?>" 
+                        <img src="<?php echo htmlspecialchars($all_currencies[$currency]['flag']); ?>"
                             alt="<?php echo $currency; ?> flag">
                     </div>
                     <div class="currency-code"><?php echo $currency; ?></div>
                     <div class="conversion-info">
-                        <input 
-                            type="text"
-                            class="converted-amount currency-input"
-                            data-currency="<?php echo $currency; ?>" 
-                            data-rate="<?php echo $rate; ?>"
-                            value="<?php echo number_format($converted, 2); ?>"
-                            oninput="handleCurrencyInput(this)"
-                        >
+                        <input type="text" class="converted-amount currency-input" data-currency="<?php echo $currency; ?>"
+                            data-rate="<?php echo $rate; ?>" value="<?php echo number_format($converted, 2); ?>"
+                            oninput="handleCurrencyInput(this)">
                         <div class="exchange-rate">
-                            1 <?php echo $base_currency; ?> = <?php echo number_format($rate, 4); ?> <?php echo $currency; ?>
+                            1 <?php echo $base_currency; ?> = <?php echo number_format($rate, 4); ?>         <?php echo $currency; ?>
                         </div>
                     </div>
 
@@ -408,15 +419,18 @@ $last_updated_ts = time();
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
-        
+
         <!-- Add Currency Button -->
         <button class="add-currency-btn" onclick="openModal()">
             <span style="font-size: 24px;">+</span>
             <span>Add currency</span>
         </button>
-        
+
+        <a href="home.php" class="back-home">← Back to Home</a>
+
+
     </div>
-    
+
     <!-- Add Currency Modal -->
     <div class="modal" id="currencyModal">
         <div class="modal-content">
@@ -429,10 +443,10 @@ $last_updated_ts = time();
                     <form method="POST">
                         <input type="hidden" name="action" value="add">
                         <input type="hidden" name="currency" value="<?php echo $code; ?>">
-                        <button type="submit" class="currency-option" style="border: none; background: none; width: 100%; text-align: left;">
+                        <button type="submit" class="currency-option"
+                            style="border: none; background: none; width: 100%; text-align: left;">
                             <div class="flag-icon">
-                                 <img src="<?php echo htmlspecialchars($data['flag']); ?>" 
-                                    alt="<?php echo $code; ?> flag">
+                                <img src="<?php echo htmlspecialchars($data['flag']); ?>" alt="<?php echo $code; ?> flag">
                             </div>
                             <div class="currency-option-text">
                                 <div class="currency-option-code"><?php echo $code; ?></div>
@@ -444,7 +458,7 @@ $last_updated_ts = time();
             <?php endforeach; ?>
         </div>
     </div>
-    
+
     <script>
         // Exchange rates from PHP (1 MYR = rate[currency])
         const rates = <?php echo json_encode($mock_rates); ?>;
@@ -458,7 +472,7 @@ $last_updated_ts = time();
 
         function handleCurrencyInput(changedInput) {
             const currency = changedInput.dataset.currency;
-            const rate     = parseFloat(changedInput.dataset.rate);
+            const rate = parseFloat(changedInput.dataset.rate);
             const rawValue = parseNumber(changedInput.value);
 
             if (!currency) return;
@@ -478,7 +492,7 @@ $last_updated_ts = time();
             // Step 2: update all currency inputs based on MYR amount
             document.querySelectorAll('.currency-input').forEach(input => {
                 const curr = input.dataset.currency;
-                const r    = parseFloat(input.dataset.rate);
+                const r = parseFloat(input.dataset.rate);
 
                 let amount;
                 if (curr === 'MYR') {
@@ -496,13 +510,13 @@ $last_updated_ts = time();
         function openModal() {
             document.getElementById('currencyModal').classList.add('active');
         }
-        
+
         function closeModal() {
             document.getElementById('currencyModal').classList.remove('active');
         }
-        
+
         // Close modal when clicking outside
-        document.getElementById('currencyModal').addEventListener('click', function(e) {
+        document.getElementById('currencyModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeModal();
             }
@@ -531,7 +545,7 @@ $last_updated_ts = time();
         }
 
         // Initialize values once on load
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             const base = document.getElementById('baseAmount');
             if (base) {
                 handleCurrencyInput(base);
@@ -540,4 +554,5 @@ $last_updated_ts = time();
         });
     </script>
 </body>
+
 </html>

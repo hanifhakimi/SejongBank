@@ -9,11 +9,10 @@ include 'db_connect.php';
 
 $user_id = $_SESSION['user_id'];
 
-// Fetch user accounts
 $query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
 $result = mysqli_query($conn, $query);
 
-// Handle withdrawal form
+//handle withdrawal form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $account_id = $_POST['account_id'];
     $amount = floatval($_POST['amount']);
@@ -23,29 +22,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Get current balance
+    //get current balance
     $bal_query = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
     $bal_result = mysqli_query($conn, $bal_query);
     $bal_row = mysqli_fetch_assoc($bal_result);
 
     $current_balance = $bal_row['balance'];
 
-    // Check if enough balance
-    if ($amount > $current_balance) {
+    if ($amount > $current_balance) { //check if enough balance
         echo "<script>alert('Insufficient balance!'); window.location='withdraw.php';</script>";
         exit;
     }
 
-    // Deduct amount
+    //deduct amount
     $update = "UPDATE accounts 
            SET balance = balance - $amount 
            WHERE account_id = $account_id AND user_id = $user_id";
     mysqli_query($conn, $update);
 
-    // Insert transaction
+    //insert into transaction
     $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
-              VALUES ($user_id, $account_id, 'Withdraw', $amount, 'Account withdrawal')";
+              VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
     mysqli_query($conn, $insert_tx);
+
 
 
 

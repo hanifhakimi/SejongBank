@@ -7,8 +7,8 @@ if (!isset($_SESSION['user_id'])) {
 
 include 'db_connect.php';
 
-$user_id = (int)$_SESSION['user_id'];
-$piggybank_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$user_id = (int) $_SESSION['user_id'];
+$piggybank_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 // --- Get tabung info (for display) ---
 $piggy_sql = "SELECT * FROM piggybank 
@@ -34,8 +34,8 @@ while ($row = mysqli_fetch_assoc($accounts_res)) {
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $amount = (float)$_POST['amount'];
-    $source_account_id = (int)$_POST['source_account_id'];
+    $amount = (float) $_POST['amount'];
+    $source_account_id = (int) $_POST['source_account_id'];
 
     if ($amount <= 0) {
         $error = "Amount must be greater than 0.";
@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!$account) {
             $error = "Invalid account selected.";
         } else {
-            $current_balance = (float)$account['balance'];
+            $current_balance = (float) $account['balance'];
 
             if ($current_balance < $amount) {
                 $error = "Insufficient balance in selected account.";
@@ -65,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // 1) Deduct from selected account
                 $update_account = "UPDATE accounts
                                    SET balance = balance - $amount
-                                   WHERE account_id = " . (int)$account['account_id'];
+                                   WHERE account_id = " . (int) $account['account_id'];
 
                 // 2) Add to piggybank
                 $update_piggy = "UPDATE piggybank
@@ -74,13 +74,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                    AND user_id = $user_id";
 
                 // 3) Insert into transactions (for history)
-                $tx_type = 'Tabung Transfer';
-                $desc_text = 'Transfer to tabung ' . $piggy['piggybank_name'];
+                $tx_type = 'Withdrawal'; // must match ENUM
+                $desc_text = 'Transfer to Tabung: ' . $piggy['piggybank_name'];
                 $desc = mysqli_real_escape_string($conn, $desc_text);
 
                 $insert_tx = "INSERT INTO transactions 
-                              (user_id, account_id, type, amount, description)
-                              VALUES ($user_id, $source_account_id, '$tx_type', $amount, '$desc')";
+                                (user_id, account_id, type, amount, description)
+                                VALUES ($user_id, $source_account_id, '$tx_type', $amount, '$desc')";
 
                 $ok1 = mysqli_query($conn, $update_account);
                 $ok2 = mysqli_query($conn, $update_piggy);
@@ -101,33 +101,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Add Money</title>
-<style>
-    body { font-family: Arial; background: #f3f3f3; }
-    input, button, select {
-        width: 100%; padding: 10px; margin-top: 10px;
-        border-radius: 5px; border: 1px solid #ccc;
-    }
-    button {
-        background: #ffaa00; color: white; border: none;
-    }
-    .info-box {
-        background:#f7f7f7;
-        padding:10px;
-        border-radius:6px;
-        margin-bottom:10px;
-        font-size:14px;
-    }
-    .error {
-        margin-top: 10px;
-        padding: 10px;
-        background: #ffe0e0;
-        color: #b00000;
-        border-radius: 5px;
-    }
-</style>
+    <title>Add Money</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f3f3f3;
+        }
+
+        input,
+        button,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background: #ffaa00;
+            color: white;
+            border: none;
+        }
+
+        .info-box {
+            background: #f7f7f7;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .error {
+            margin-top: 10px;
+            padding: 10px;
+            background: #ffe0e0;
+            color: #b00000;
+            border-radius: 5px;
+        }
+    </style>
 </head>
+
 <body style="
     margin:0;
     font-family:Arial;
@@ -138,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     align-items:center;
 ">
 
-<div style="
+    <div style="
     width:600px;
     background:#fff;
     padding:30px;
@@ -146,36 +162,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     box-shadow:0 2px 10px rgba(0,0,0,0.1);
 ">
 
-    <h2 style="color:#ffaa00; text-align:center; margin-bottom:10px;">Add Money to Tabung</h2>
+        <h2 style="color:#ffaa00; text-align:center; margin-bottom:10px;">Add Money to Tabung</h2>
 
-    <div class="info-box">
-        <strong>Tabung:</strong> <?php echo htmlspecialchars($piggy['piggybank_name']); ?><br>
-        <strong>Current Saved:</strong> RM <?php echo number_format($piggy['current_amount'], 2); ?><br>
-        <strong>Target:</strong> RM <?php echo number_format($piggy['target_amount'], 2); ?>
-    </div>
+        <div class="info-box">
+            <strong>Tabung:</strong> <?php echo htmlspecialchars($piggy['piggybank_name']); ?><br>
+            <strong>Current Saved:</strong> RM <?php echo number_format($piggy['current_amount'], 2); ?><br>
+            <strong>Target:</strong> RM <?php echo number_format($piggy['target_amount'], 2); ?>
+        </div>
 
-    <?php if (!empty($error)) { ?>
-        <div class="error"><?php echo $error; ?></div>
-    <?php } ?>
+        <?php if (!empty($error)) { ?>
+            <div class="error"><?php echo $error; ?></div>
+        <?php } ?>
 
-    <form method="POST">
-        <label>From Account</label>
-        <select name="source_account_id" required>
-            <option value="">-- Select account --</option>
-            <?php foreach ($accounts as $acc) { ?>
-                <option value="<?php echo $acc['account_id']; ?>">
-                    <?php echo htmlspecialchars($acc['account_type']); ?>
-                    (<?php echo $acc['account_number']; ?>) - 
-                    RM <?php echo number_format($acc['balance'], 2); ?>
-                </option>
-            <?php } ?>
-        </select>
+        <form method="POST">
+            <label>From Account</label>
+            <select name="source_account_id" required>
+                <option value="">-- Select account --</option>
+                <?php foreach ($accounts as $acc) { ?>
+                    <option value="<?php echo $acc['account_id']; ?>">
+                        <?php echo htmlspecialchars($acc['account_type']); ?>
+                        (<?php echo $acc['account_number']; ?>) -
+                        RM <?php echo number_format($acc['balance'], 2); ?>
+                    </option>
+                <?php } ?>
+            </select>
 
-        <label>Amount (RM)</label>
-        <input type="number" step="0.01" name="amount" required
-               style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; margin-top:10px;">
+            <label>Amount (RM)</label>
+            <input type="number" step="0.01" name="amount" required
+                style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; margin-top:10px;">
 
-        <button type="submit" style="
+            <button type="submit" style="
             width:100%;
             margin-top:25px;
             background:#ffaa00;
@@ -188,9 +204,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-size:15px;
             box-shadow:0 2px 5px rgba(0,0,0,0.2);
         ">Add Money</button>
-    </form>
+        </form>
 
-</div>
+    </div>
 
 </body>
+
 </html>

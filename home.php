@@ -5,7 +5,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Replace your $user_id = 1 with:
 $user_id = $_SESSION['user_id'];
 ?>
 
@@ -13,18 +12,14 @@ $user_id = $_SESSION['user_id'];
 <?php
 include 'db_connect.php';
 
-/*-------------------------------------
-   1. Fetch user full name
--------------------------------------*/
 $query_user = "SELECT full_name FROM users WHERE user_id = $user_id";
 $result_user = mysqli_query($conn, $query_user);
 $user_data = mysqli_fetch_assoc($result_user);
 
 $user_name = $user_data ? $user_data['full_name'] : "User";
 
-/*-------------------------------------
-   2. Fetch account balances
--------------------------------------*/
+
+//get account
 $query_accounts = "SELECT account_type, balance, account_number 
                    FROM accounts 
                    WHERE user_id = $user_id";
@@ -216,7 +211,6 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
 
         <div style="display: flex; gap: 20px; justify-content: space-between;">
 
-            <!-- Tabung -->
             <a href="tabung.php" style="
                 flex: 1;
                 text-align: center;
@@ -231,7 +225,6 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
                 Tabung (Piggy Bank)
             </a>
 
-            <!-- Bill Payment -->
             <a href="bill_payment.php" style="
                 flex: 1;
                 text-align: center;
@@ -246,7 +239,6 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
                 Bill Payment
             </a>
 
-            <!-- Currency Converter -->
             <a href="currency.php" style="
                 flex: 1;
                 text-align: center;
@@ -261,7 +253,6 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
                 Currency Converter
             </a>
 
-            <!-- Transaction History -->
             <a href="transaction_history.php" style="
                 flex: 1;
                 text-align: center;

@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        WHERE account_id = $account_id AND user_id = $user_id";
             mysqli_query($conn, $update);
 
-            //insert transaction
+            //insert into transaction
             $desc = "Bill Payment - $bill_type";
             $insert = "INSERT INTO transactions (user_id, account_id, type, amount, description)
                        VALUES ($user_id, $account_id, 'Bill Payment', $amount, '$desc')";
@@ -59,58 +59,121 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bill Payment | SJB</title>
+
     <style>
         body {
-            font-family: Arial;
-            background: #f9f9f9;
+            font-family: 'Segoe UI', Arial;
+            margin: 0;
+            background: linear-gradient(135deg, #ff4d4d 0%, #ffffff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .container {
-            width: 500px;
-            margin: 50px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 650px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         h2 {
             color: #004b87;
             text-align: center;
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: bold;
         }
 
-        /* 🔥 Ensures ALL form elements have the SAME width */
-        select,
-        input {
+        /* Bigger, modern form fields */
+        select, input {
             width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            box-sizing: border-box;
-            font-size: 14px;
+            padding: 15px;
+            margin-top: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            font-size: 15px;
+            transition: 0.3s;
         }
 
+        select:focus, input:focus {
+            border-color: #004b87;
+            outline: none;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(0,75,135,0.3);
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 18px;
+            display: block;
+            color: #333;
+        }
+
+        /* Larger modern button */
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
+            margin-top: 30px;
             background: #ff4d4d;
             color: white;
-            margin-top: 20px;
-            border-radius: 6px;
-            font-weight: bold;
+            border-radius: 10px;
             border: none;
-        }
-
-        .back {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .back a {
-            text-decoration: none;
-            color: #004b87;
+            font-size: 17px;
             font-weight: bold;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        button:hover {
+            background: #c20000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        }
+
+        /* Back button */
+        .back a {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 10px 20px;
+            background: #004b87;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .back a:hover {
+            background: #00345d;
+        }
+
+        /* Message box styling */
+        .msg-success {
+            color: #0a7a26;
+            padding: 10px;
+            background: #dfffe6;
+            border-left: 5px solid #0a7a26;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+
+        .msg-error {
+            color: #b00000;
+            padding: 10px;
+            background: #ffe0e0;
+            border-left: 5px solid #b00000;
+            margin-bottom: 15px;
+            border-radius: 6px;
         }
     </style>
 </head>
@@ -118,9 +181,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
     <div class="container">
+
         <h2>Bill Payment</h2>
 
-        <?php echo $message; ?>
+        <!-- Dynamic message box -->
+        <?php 
+        if (!empty($message)) {
+            if (strpos($message, 'successful') !== false) {
+                echo "<div class='msg-success'>$message</div>";
+            } else {
+                echo "<div class='msg-error'>$message</div>";
+            }
+        }
+        ?>
 
         <form action="" method="POST">
 
@@ -146,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </select>
 
             <label>Amount (RM)</label>
-            <input type="number" name="amount" step="0.01" required>
+            <input type="number" name="amount" step="0.01" placeholder="Enter payment amount" required>
 
             <button type="submit">Pay Bill</button>
         </form>
@@ -154,8 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="back">
             <a href="home.php">← Back to Home</a>
         </div>
+
     </div>
 
 </body>
-
 </html>
