@@ -1,5 +1,5 @@
 <?php
-$host = "172.30.1.42"; #test
+$host = "172.30.1.81"; #test
 $user = "remote_user";
 $pass = "Software123";
 $dbname = "sejongbank";
