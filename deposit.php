@@ -13,31 +13,30 @@ $user_id = $_SESSION['user_id'];
 $query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
 $result = mysqli_query($conn, $query);
 
+$message = ""; // store success/error message
+
 // Handle deposit form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $account_id = $_POST['account_id'];
     $amount = floatval($_POST['amount']);
 
     if ($amount <= 0) {
-        echo "<script>alert('Amount must be greater than 0'); window.location='deposit.php';</script>";
-        exit;
+        $message = "<p style='color:red;'>Amount must be greater than 0.</p>";
+    } else {
+
+        // Update balance
+        $update = "UPDATE accounts 
+                   SET balance = balance + $amount 
+                   WHERE account_id = $account_id AND user_id = $user_id";
+        mysqli_query($conn, $update);
+
+        // Insert transaction
+        $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
+                      VALUES ($user_id, $account_id, 'Deposit', $amount, 'Account deposit')";
+        mysqli_query($conn, $insert_tx);
+
+        $message = "<p>Deposit successful!</p>";
     }
-
-    // Update balance
-    $update = "UPDATE accounts 
-           SET balance = balance + $amount 
-           WHERE account_id = $account_id AND user_id = $user_id";
-    mysqli_query($conn, $update);
-
-    // Insert transaction
-    $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
-              VALUES ($user_id, $account_id, 'Deposit', $amount, 'Account deposit')";
-    mysqli_query($conn, $insert_tx);
-
-
-
-    echo "<script>alert('Deposit successful!'); window.location='home.php';</script>";
-    exit;
 }
 ?>
 
@@ -66,18 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
             animation: fadeIn 0.9s ease;
+            text-align: center; /* center the title + message */
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo {
@@ -88,9 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 10px;
         }
 
-        .logo span {
-            color: #ff4d4d;
-        }
+        .logo span { color: #ff4d4d; }
 
         h2 {
             text-align: center;
@@ -105,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-top: 10px;
             display: block;
             color: #333;
+            text-align: left;
         }
 
         select,
@@ -146,6 +138,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
         }
 
+        /* SUCCESS + ERROR MESSAGE BOXES (same as bill + withdraw) */
+        .msg-success {
+            color: #0a7a26;
+            padding: 10px;
+            background: #dfffe6;
+            border-left: 5px solid #0a7a26;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        .msg-error {
+            color: #b00000;
+            padding: 10px;
+            background: #ffe0e0;
+            border-left: 5px solid #b00000;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
         .back {
             text-align: center;
             margin-top: 15px;
@@ -172,6 +185,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="logo">Sejong<span>Bank</span></div>
         <h2>Deposit Money</h2>
 
+        <!-- Success/Error message -->
+        <?php
+        if (!empty($message)) {
+            if (strpos($message, 'successful') !== false) {
+                echo "<div class='msg-success'>$message</div>";
+            } else {
+                echo "<div class='msg-error'>$message</div>";
+            }
+        }
+        ?>
+
         <form method="POST">
 
             <label>Select Account</label>
@@ -179,9 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <option disabled selected>-- Choose account --</option>
 
                 <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                    <option value="<?php echo $row['account_id']; ?>">
-                        <?php echo $row['account_type']; ?>
-                        (RM <?php echo number_format($row['balance'], 2); ?>)
+                    <option value="<?= $row['account_id']; ?>">
+                        <?= $row['account_type']; ?> (RM <?= number_format($row['balance'], 2); ?>)
                     </option>
                 <?php endwhile; ?>
             </select>
@@ -198,5 +221,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
 </body>
-
 </html>

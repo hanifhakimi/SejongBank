@@ -14,6 +14,7 @@ $result = mysqli_query($conn, $query);
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +32,7 @@ $result = mysqli_query($conn, $query);
             font-size: 22px;
             color: #004b87;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .container {
@@ -40,7 +41,7 @@ $result = mysqli_query($conn, $query);
             background: #fff;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         h2 {
@@ -69,11 +70,19 @@ $result = mysqli_query($conn, $query);
 
         .deposit {
             color: #2ecc71;
+            /* green */
             font-weight: bold;
         }
 
         .withdraw {
             color: #e74c3c;
+            /* red */
+            font-weight: bold;
+        }
+
+        .bill {
+            color: #2980b9;
+            /* blue */
             font-weight: bold;
         }
 
@@ -92,51 +101,83 @@ $result = mysqli_query($conn, $query);
         }
     </style>
 </head>
+
 <body>
 
-<div class="header">Transaction History</div>
+    <div class="header">Transaction History</div>
 
-<div class="container">
+    <div class="container">
 
-    <h2>Your Recent Transactions</h2>
+        <h2>Your Recent Transactions</h2>
 
-    <table>
-        <tr>
-            <th>Account</th>
-            <th>Type</th>
-            <th>Amount (RM)</th>
-            <th>Date</th>
-        </tr>
+        <table>
+            <tr>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Amount (RM)</th>
+                <th>Date</th>
+            </tr>
 
-        <?php
-        if (mysqli_num_rows($result) > 0) {
+            <?php
+            if (mysqli_num_rows($result) > 0) {
 
-            while ($row = mysqli_fetch_assoc($result)) {
+                while ($row = mysqli_fetch_assoc($result)) {
 
-                $type_class = ($row['type'] === 'Deposit') ? "deposit" : "withdraw";
-                $amount = number_format($row['amount'], 2);
+                    // CASE 1: Deposit
+                    if ($row['type'] === 'Deposit') {
+                        $type_class = "deposit";
+                        $type_display = "Deposit";
+                    }
 
+                    // CASE 2: Withdrawal
+                    elseif ($row['type'] === 'Withdrawal') {
+                        $type_class = "withdraw";
+                        $type_display = "Withdrawal";
+                    }
+
+                    // CASE 3: Bill payment with proper type
+                    elseif ($row['type'] === 'Bill Payment') {
+                        $type_class = "bill";
+                        $type_display = "Bill";
+                    }
+
+                    // CASE 4: Bill payment saved as NULL (fallback detection)
+                    elseif (empty($row['type']) && strpos($row['description'], 'Bill Payment') !== false) {
+                        $type_class = "bill";
+                        $type_display = "Bill";
+                    }
+
+                    // fallback
+                    else {
+                        $type_class = "";
+                        $type_display = $row['type'];
+                    }
+
+                    $amount = number_format($row['amount'], 2);
+
+                    echo "
+    <tr>
+        <td>{$row['account_id']}</td>
+        <td class='$type_class'>{$type_display}</td>
+        <td>RM {$amount}</td>
+        <td>{$row['created_at']}</td>
+    </tr>";
+                }
+
+
+            } else {
                 echo "
-                <tr>
-                    <td>{$row['account_id']}</td>
-                    <td class='$type_class'>{$row['type']}</td>
-                    <td>RM {$amount}</td>
-                    <td>{$row['created_at']}</td>
-                </tr>";
-            }
-
-        } else {
-            echo "
             <tr>
                 <td colspan='4'>No transactions found.</td>
             </tr>";
-        }
-        ?>
-    </table>
+            }
+            ?>
+        </table>
 
-    <a href='home.php' class='back-btn'>← Back to Home</a>
+        <a href='home.php' class='back-btn'>← Back to Home</a>
 
-</div>
+    </div>
 
 </body>
+
 </html>

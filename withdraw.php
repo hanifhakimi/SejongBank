@@ -12,44 +12,53 @@ $user_id = $_SESSION['user_id'];
 $query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
 $result = mysqli_query($conn, $query);
 
-//handle withdrawal form
+// Handle withdrawal form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $account_id = $_POST['account_id'];
     $amount = floatval($_POST['amount']);
+
+    // Get user PIN from cards table
+    $pin_query = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
+    $pin_result = mysqli_query($conn, $pin_query);
+    $pin_row = mysqli_fetch_assoc($pin_result);
+
+    $stored_pin = $pin_row['pin'];
+    $entered_pin = $_POST['pin'];
+
+    if ($entered_pin !== $stored_pin) {
+        echo "<script>alert('Incorrect PIN! Withdrawal denied.'); window.location='withdraw.php';</script>";
+        exit;
+    }
 
     if ($amount <= 0) {
         echo "<script>alert('Amount must be greater than 0'); window.location='withdraw.php';</script>";
         exit;
     }
 
-    //get current balance
+    // Get current balance
     $bal_query = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
     $bal_result = mysqli_query($conn, $bal_query);
     $bal_row = mysqli_fetch_assoc($bal_result);
 
     $current_balance = $bal_row['balance'];
 
-    if ($amount > $current_balance) { //check if enough balance
+    if ($amount > $current_balance) {
         echo "<script>alert('Insufficient balance!'); window.location='withdraw.php';</script>";
         exit;
     }
 
-    //deduct amount
+    // Deduct amount
     $update = "UPDATE accounts 
-           SET balance = balance - $amount 
-           WHERE account_id = $account_id AND user_id = $user_id";
+               SET balance = balance - $amount 
+               WHERE account_id = $account_id AND user_id = $user_id";
     mysqli_query($conn, $update);
 
-    //insert into transaction
+    // Insert into transactions table
     $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
-              VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
+                  VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
     mysqli_query($conn, $insert_tx);
 
-
-
-
-    echo "<script>alert('Withdrawal successful!'); window.location='home.php';</script>";
-    exit;
+    $message = "<p style='color:green;'>Withdrawal successful!</p>";
 }
 ?>
 
@@ -59,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>SejongBank | Withdrawal</title>
+
     <style>
         body {
             margin: 0;
@@ -71,19 +81,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .withdraw-container {
-            width: 420px;
-            background: rgba(255, 255, 255, 0.88);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            animation: fadeIn 0.9s ease;
+            width: 520px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 45px 50px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.22);
+            text-align: center;
         }
 
-        @keyframes fadeIn {
+        .logo {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #004b87;
+        }
+
+        .logo span {
+            color: #ff4d4d;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 28px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 6px;
+            margin-top: 18px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #bbb;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .pin-box {
+            letter-spacing: 4px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 26px;
+            background: #004b87;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #00345d;
+        }
+
+        .back {
+            margin-top: 15px;
+        }
+
+        .back a {
+            color: #ff4d4d;
+            text-decoration: none;
+        }
+
+        .back a:hover {
+            text-decoration: underline;
+        }
+
+        /* ACCOUNT PREVIEW CARD */
+        .account-preview {
+            margin-top: 20px;
+            padding: 22px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+            display: none;
+            animation: slideUp 0.4s ease;
+            text-align: center;
+        }
+
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(12px);
             }
 
             to {
@@ -92,114 +191,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        .logo {
-            text-align: center;
-            font-size: 28px;
+        .account-title {
+            font-size: 18px;
             font-weight: bold;
             color: #004b87;
-            margin-bottom: 10px;
         }
 
-        .logo span {
-            color: #ff4d4d;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 22px;
-            color: #333;
-            font-size: 22px;
-            font-weight: 600;
-        }
-
-        label {
-            font-weight: 600;
-            margin-top: 10px;
-            display: block;
-            color: #333;
-        }
-
-        select,
-        input {
-            width: 100%;
-            padding: 14px;
-            margin-top: 8px;
-            border-radius: 8px;
-            border: 1px solid #bbb;
+        .balance-text {
+            margin-top: 6px;
             font-size: 15px;
-            box-sizing: border-box;
-            transition: 0.3s;
+            color: #444;
         }
 
-        select:focus,
-        input:focus {
-            border-color: #004b87;
-            outline: none;
-            box-shadow: 0 0 6px rgba(0, 75, 135, 0.3);
-        }
-
-        button {
+        .bar-container {
             width: 100%;
-            padding: 14px;
-            margin-top: 18px;
-            background: #004b87;
-            color: white;
-            border: none;
+            height: 12px;
+            background: #f1f1f1;
             border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.25s ease;
+            margin-top: 10px;
         }
 
-        button:hover {
-            background: #00345d;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+        .bar-fill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff4d4d, #ff7a7a);
+            border-radius: 8px;
+            transition: width 0.35s ease;
         }
 
-        .back {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
+        .msg-success {
+            color: #0a7a26;
+            padding: 10px;
+            background: #dfffe6;
+            border-left: 5px solid #0a7a26;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 15px;
         }
 
-        .back a {
-            color: #ff4d4d;
-            text-decoration: none;
-            font-weight: bold;
-            transition: 0.25s;
-        }
-
-        .back a:hover {
-            color: #c20000;
-            text-decoration: underline;
+        .msg-error {
+            color: #b00000;
+            padding: 10px;
+            background: #ffe0e0;
+            border-left: 5px solid #b00000;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 15px;
         }
     </style>
+
 </head>
 
 <body>
 
     <div class="withdraw-container">
+
         <div class="logo">Sejong<span>Bank</span></div>
         <h2>Withdraw Money</h2>
+
+        <?php
+        if (!empty($message)) {
+            if (strpos($message, 'successful') !== false) {
+                echo "<div class='msg-success'>$message</div>";
+            } else {
+                echo "<div class='msg-error'>$message</div>";
+            }
+        }
+        ?>
 
         <form method="POST">
 
             <label>Select Account</label>
-            <select name="account_id" required>
+            <select name="account_id" id="accountSelect" required>
                 <option disabled selected>-- Choose account --</option>
 
-                <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                    <option value="<?php echo $row['account_id']; ?>">
-                        <?php echo $row['account_type']; ?>
-                        (RM <?php echo number_format($row['balance'], 2); ?>)
+                <?php mysqli_data_seek($result, 0);
+                while ($row = mysqli_fetch_assoc($result)): ?>
+                    <option value="<?= $row['account_id']; ?>" data-type="<?= $row['account_type']; ?>"
+                        data-balance="<?= $row['balance']; ?>">
+                        <?= $row['account_type']; ?> (RM <?= number_format($row['balance'], 2); ?>)
                     </option>
                 <?php endwhile; ?>
             </select>
 
+            <div class="account-preview" id="previewCard">
+                <div class="account-title" id="previewType">Account</div>
+                <div class="balance-text" id="previewBalance">Balance: RM 0.00</div>
+
+                <div class="bar-container">
+                    <div class="bar-fill" id="balanceBar"></div>
+                </div>
+            </div>
+
             <label>Amount (RM)</label>
-            <input type="number" step="0.01" min="0" name="amount" placeholder="Enter amount to withdraw" required>
+            <input type="number" step="0.01" min="0" id="amountInput" name="amount" required>
+
+            <label>Enter PIN</label>
+            <input type="password" maxlength="4" minlength="4" name="pin" class="pin-box" placeholder="••••"
+                pattern="\d{4}" required>
 
             <button type="submit">Confirm Withdrawal</button>
         </form>
@@ -208,6 +297,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="home.php">← Back to Home</a>
         </div>
     </div>
+
+    <script>
+        const accountSelect = document.getElementById("accountSelect");
+        const previewCard = document.getElementById("previewCard");
+        const previewType = document.getElementById("previewType");
+        const previewBalance = document.getElementById("previewBalance");
+        const balanceBar = document.getElementById("balanceBar");
+        const amountInput = document.getElementById("amountInput");
+
+        let currentBalance = 0;
+
+        accountSelect.addEventListener("change", function () {
+            const selected = this.options[this.selectedIndex];
+            const type = selected.dataset.type;
+            currentBalance = parseFloat(selected.dataset.balance);
+
+            previewType.textContent = type;
+            previewBalance.textContent = "Balance: RM " + currentBalance.toFixed(2);
+
+            previewCard.style.display = "block";
+            balanceBar.style.width = "100%";
+        });
+
+        amountInput.addEventListener("input", function () {
+            const amount = parseFloat(this.value) || 0;
+            let percent = 100 - ((amount / currentBalance) * 100);
+
+            if (percent < 0) percent = 0;
+            if (percent > 100) percent = 100;
+
+            balanceBar.style.width = percent + "%";
+        });
+    </script>
 
 </body>
 
