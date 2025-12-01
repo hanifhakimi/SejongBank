@@ -185,7 +185,7 @@ while ($row = mysqli_fetch_assoc($result_accounts)) {
         <a href="card.php">CARDS</a>
         <a href="deposit.php">DEPOSIT</a>
         <a href="withdraw.php">WITHDRAW</a>
-        <a href="#">WEALTH</a>
+        <a href="wealth.php">WEALTH</a>
     </div>
 
 
