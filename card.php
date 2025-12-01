@@ -1,8 +1,7 @@
 <?php
 session_start();
-require 'db_connect.php';   // must define $conn = new mysqli(...)
+require 'db_connect.php';
 
-// Make sure user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -10,8 +9,17 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Get this user's card
-$sql = "SELECT card_number, cardholder_name, valid_until, pin, cvc
+/* 1) Handle Freeze/Unfreeze Toggle */
+if (isset($_POST['toggle_freeze'])) {
+    $sqlToggle = "UPDATE cards SET is_frozen = 1 - is_frozen WHERE user_id = ?";
+    $stmt = $conn->prepare($sqlToggle);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $stmt->close();
+}
+
+/* 2) Get card info including freeze status */
+$sql = "SELECT card_number, cardholder_name, valid_until, pin, cvc, is_frozen
         FROM cards
         WHERE user_id = ?
         LIMIT 1";
@@ -19,24 +27,25 @@ $sql = "SELECT card_number, cardholder_name, valid_until, pin, cvc
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
-$stmt->bind_result($card_number, $cardholder_name, $valid_until, $card_pin, $card_cvc);
+$stmt->bind_result($card_number, $cardholder_name, $valid_until, $card_pin, $card_cvc, $is_frozen);
 $stmt->fetch();
 $stmt->close();
 
-/* Fallbacks in case no row is found */
 if (!$card_number) {
-    $card_number      = "0000000000000000";
-    $cardholder_name  = "No card";
-    $valid_until      = "--/----";
-    $card_pin         = "0000";
-    $card_cvc         = "000";
+    $card_number = "0000000000000000";
+    $cardholder_name = "No card";
+    $valid_until = "--/----";
+    $card_pin = "0000";
+    $card_cvc = "000";
+    $is_frozen = 0;
 }
 
-/* Format numbers for display */
+$cardFrozen = (bool)$is_frozen;
+
+/* Format Card Number */
 $last4 = substr($card_number, -4);
 $maskedCardNumber = substr($card_number, 0, 4) . ' ' .
-                    substr($card_number, 4, 4) . ' **** ' .
-                    $last4;
+                    substr($card_number, 4, 4) . ' **** ' . $last4;
 
 $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
 ?>
@@ -47,7 +56,6 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
   <meta charset="UTF-8">
   <title>SejongBank – Virtual Card</title>
   <style>
-    /* PAGE BACKGROUND (same feeling as red deposit page) */
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -58,7 +66,6 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       justify-content: center;
     }
 
-    /* CENTERED WHITE CARD (form container) */
     .form-card {
       background: #ffffff;
       width: 460px;
@@ -69,19 +76,14 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       box-sizing: border-box;
     }
 
-    /* TOP LOGO & TITLE */
     .bank-logo {
       font-size: 24px;
       font-weight: 700;
       text-align: center;
       margin-bottom: 4px;
     }
-    .bank-logo span:first-child {
-      color: #0056a6;   /* Sejong (blue) */
-    }
-    .bank-logo span:last-child {
-      color: #e63946;   /* Bank (red) */
-    }
+    .bank-logo span:first-child { color: #0056a6; }
+    .bank-logo span:last-child  { color: #e63946; }
 
     .page-title {
       text-align: center;
@@ -91,14 +93,13 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       color: #333;
     }
 
-    /* VIRTUAL CARD ITSELF */
     .virtual-card {
       position: relative;
       width: 100%;
       height: 190px;
       border-radius: 18px;
       border: 1px solid rgba(0,0,0,0.06);
-      background: linear-gradient(135deg, #28d36f, #1aa85a); /* fallback */
+      background: linear-gradient(135deg, #28d36f, #1aa85a);
       background-size: cover;
       background-position: center;
       box-shadow: 0 14px 26px rgba(0,0,0,0.18);
@@ -106,6 +107,10 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       box-sizing: border-box;
       overflow: hidden;
       color: #f5f5f5;
+    }
+
+    .card-frozen {
+      filter: grayscale(0.3) brightness(0.8);
     }
 
     .virtual-card-header {
@@ -166,17 +171,15 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
     }
 
     .status-frozen {
-      background: rgba(0,0,0,0.55);
+      background: rgba(0, 0, 0, 0.55);
     }
 
-    /* PIN TEXT */
     .pin-row {
       margin-top: 16px;
       font-size: 14px;
       color: #333;
     }
 
-    /* ACTION BUTTONS ROW */
     .actions-row {
       margin-top: 18px;
       display: flex;
@@ -211,7 +214,6 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       color: #ffffff;
     }
 
-    /* Simple modal for card details */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -244,19 +246,10 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       margin-bottom: 6px;
     }
 
-    .modal-label {
-      color: #4b5563;
-    }
+    .modal-label { color: #4b5563; }
+    .modal-value { font-weight: 600; color: #111827; }
 
-    .modal-value {
-      font-weight: 600;
-      color: #111827;
-    }
-
-    .modal-footer {
-      text-align: right;
-      margin-top: 10px;
-    }
+    .modal-footer { text-align: right; margin-top: 10px; }
 
     .modal-close-btn {
       border: none;
@@ -270,40 +263,37 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
     }
 
     .back-btn {
-  display: inline-block;
-  margin-top: 18px;
-  padding: 10px 20px;
-  background: #003b73;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 14px;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: background 0.15s ease;
-}
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 20px;
+      background: #003b73;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.15s ease;
+    }
 
-.back-btn:hover {
-  background: #002f5c;
-}
-
-
+    .back-btn:hover {
+      background: #002f5c;
+    }
   </style>
 </head>
 <body>
-  <form class="form-card">
+  <form class="form-card" method="post">
     <div class="bank-logo">
       <span>Sejong</span><span>Bank</span>
     </div>
     <div class="page-title">Virtual Card</div>
 
     <!-- CARD -->
-    <div class="virtual-card" id="virtualCard">
+    <div class="virtual-card <?= $cardFrozen ? 'card-frozen' : '' ?>" id="virtualCard">
       <div class="virtual-card-header">
         <span>Sejong Bank</span>
         <div class="virtual-card-chip"></div>
       </div>
 
-      <!-- CARD NUMBER FROM DB (masked) -->
       <div class="virtual-card-number" id="cardNumber">
         <?= htmlspecialchars($maskedCardNumber) ?>
       </div>
@@ -311,14 +301,12 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
       <div class="virtual-card-footer">
         <div>
           <div class="virtual-card-label">Cardholder</div>
-          <!-- NAME FROM DB -->
           <div class="virtual-card-value">
             <?= htmlspecialchars($cardholder_name) ?>
           </div>
         </div>
         <div>
           <div class="virtual-card-label">Valid thru</div>
-          <!-- VALID UNTIL FROM DB -->
           <div class="virtual-card-value">
             <?= htmlspecialchars($valid_until) ?>
           </div>
@@ -326,48 +314,43 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
         <div class="virtual-card-brand">VISA</div>
       </div>
 
-      <div class="status-badge" id="statusBadge">ACTIVE</div>
+      <div class="status-badge <?= $cardFrozen ? 'status-frozen' : '' ?>" id="statusBadge">
+        <?= $cardFrozen ? 'FROZEN' : 'ACTIVE' ?>
+      </div>
     </div>
 
-    <!-- PIN text (PIN from DB) -->
     <div class="pin-row" id="pinDisplay">PIN: ••••</div>
 
     <div class="actions-row">
       <button type="button" class="btn btn-secondary" id="showPinBtn">Show PIN</button>
       <button type="button" class="btn btn-secondary" id="cardDetailsBtn">Card details</button>
-      <button type="button" class="btn btn-danger" id="freezeBtn">Freeze card</button>
+      <button type="submit" name="toggle_freeze" class="btn btn-danger">
+        <?= $cardFrozen ? 'Unfreeze card' : 'Freeze card' ?>
+      </button>
     </div>
+
     <a href="home.php" class="back-btn">← Back to Home</a>
   </form>
 
-  <!-- MODAL (all from DB) -->
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal">
       <div class="modal-title">Card details</div>
 
       <div class="modal-row">
         <span class="modal-label">Card number</span>
-        <span class="modal-value">
-          <?= htmlspecialchars($fullCardNumberSpaced) ?>
-        </span>
+        <span class="modal-value"><?= htmlspecialchars($fullCardNumberSpaced) ?></span>
       </div>
       <div class="modal-row">
         <span class="modal-label">Name</span>
-        <span class="modal-value">
-          <?= htmlspecialchars($cardholder_name) ?>
-        </span>
+        <span class="modal-value"><?= htmlspecialchars($cardholder_name) ?></span>
       </div>
       <div class="modal-row">
         <span class="modal-label">Expiry</span>
-        <span class="modal-value">
-          <?= htmlspecialchars($valid_until) ?>
-        </span>
+        <span class="modal-value"><?= htmlspecialchars($valid_until) ?></span>
       </div>
       <div class="modal-row">
         <span class="modal-label">CVV</span>
-        <span class="modal-value">
-          <?= htmlspecialchars($card_cvc) ?>
-        </span>
+        <span class="modal-value"><?= htmlspecialchars($card_cvc) ?></span>
       </div>
 
       <div class="modal-footer">
@@ -377,30 +360,22 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
   </div>
 
   <script>
-    // PIN from PHP/DB
     const PIN = "<?= htmlspecialchars($card_pin, ENT_QUOTES) ?>";
 
-    const pinDisplay   = document.getElementById("pinDisplay");
-    const showPinBtn   = document.getElementById("showPinBtn");
-    const freezeBtn    = document.getElementById("freezeBtn");
-    const statusBadge  = document.getElementById("statusBadge");
-    const virtualCard  = document.getElementById("virtualCard");
-
+    const pinDisplay    = document.getElementById("pinDisplay");
+    const showPinBtn    = document.getElementById("showPinBtn");
     const modalBackdrop = document.getElementById("modalBackdrop");
-    const cardDetailsBtn = document.getElementById("cardDetailsBtn");
-    const modalCloseBtn  = document.getElementById("modalCloseBtn");
+    const cardDetailsBtn= document.getElementById("cardDetailsBtn");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
 
     let pinVisible = false;
-    let frozen = false;
 
-    // 1. Show / hide PIN
     showPinBtn.addEventListener("click", () => {
       pinVisible = !pinVisible;
       pinDisplay.textContent = pinVisible ? `PIN: ${PIN}` : "PIN: ••••";
       showPinBtn.textContent = pinVisible ? "Hide PIN" : "Show PIN";
     });
 
-    // 2. Card details modal
     cardDetailsBtn.addEventListener("click", () => {
       modalBackdrop.style.display = "flex";
     });
@@ -412,23 +387,6 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
     modalBackdrop.addEventListener("click", (e) => {
       if (e.target === modalBackdrop) {
         modalBackdrop.style.display = "none";
-      }
-    });
-
-    // 3. Freeze / unfreeze card
-    freezeBtn.addEventListener("click", () => {
-      frozen = !frozen;
-
-      if (frozen) {
-        statusBadge.textContent = "FROZEN";
-        statusBadge.classList.add("status-frozen");
-        virtualCard.style.filter = "grayscale(0.3) brightness(0.8)";
-        freezeBtn.textContent = "Unfreeze card";
-      } else {
-        statusBadge.textContent = "ACTIVE";
-        statusBadge.classList.remove("status-frozen");
-        virtualCard.style.filter = "none";
-        freezeBtn.textContent = "Freeze card";
       }
     });
   </script>

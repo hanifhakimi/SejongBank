@@ -9,56 +9,75 @@ include 'db_connect.php';
 
 $user_id = $_SESSION['user_id'];
 
-$query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
+/* NEW: check if this user's card is frozen */
+$cardFrozen = false;
+$freeze_query = "SELECT is_frozen FROM cards WHERE user_id = $user_id LIMIT 1";
+$freeze_result = mysqli_query($conn, $freeze_query);
+if ($freeze_result && mysqli_num_rows($freeze_result) > 0) {
+    $freeze_row  = mysqli_fetch_assoc($freeze_result);
+    $cardFrozen = ((int)$freeze_row['is_frozen'] === 1);
+}
+
+/* Load accounts as before */
+$query  = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
 $result = mysqli_query($conn, $query);
 
-// Handle withdrawal form
+$message = "";
+
+/* Handle withdrawal form */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $account_id = $_POST['account_id'];
-    $amount = floatval($_POST['amount']);
 
-    // Get user PIN from cards table
-    $pin_query = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
-    $pin_result = mysqli_query($conn, $pin_query);
-    $pin_row = mysqli_fetch_assoc($pin_result);
+    if ($cardFrozen) {
+        // If card is frozen, do NOT process anything
+        $message = "<p>Your card is frozen. You cannot withdraw money.</p>";
+    } else {
 
-    $stored_pin = $pin_row['pin'];
-    $entered_pin = $_POST['pin'];
+        $account_id = $_POST['account_id'];
+        $amount     = floatval($_POST['amount']);
 
-    if ($entered_pin !== $stored_pin) {
-        echo "<script>alert('Incorrect PIN! Withdrawal denied.'); window.location='withdraw.php';</script>";
-        exit;
+        // Get user PIN from cards table
+        $pin_query  = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
+        $pin_result = mysqli_query($conn, $pin_query);
+        $pin_row    = mysqli_fetch_assoc($pin_result);
+
+        $stored_pin  = $pin_row['pin'];
+        $entered_pin = $_POST['pin'];
+
+        if ($entered_pin !== $stored_pin) {
+            echo "<script>alert('Incorrect PIN! Withdrawal denied.'); window.location='withdraw.php';</script>";
+            exit;
+        }
+
+        if ($amount <= 0) {
+            echo "<script>alert('Amount must be greater than 0'); window.location='withdraw.php';</script>";
+            exit;
+        }
+
+        // Get current balance
+        $bal_query  = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
+        $bal_result = mysqli_query($conn, $bal_query);
+        $bal_row    = mysqli_fetch_assoc($bal_result);
+
+        $current_balance = $bal_row['balance'];
+
+        if ($amount > $current_balance) {
+            echo "<script>alert('Insufficient balance!'); window.location='withdraw.php';</script>";
+            exit;
+        }
+
+        // Deduct amount
+        $update = "UPDATE accounts 
+                   SET balance = balance - $amount 
+                   WHERE account_id = $account_id AND user_id = $user_id";
+        mysqli_query($conn, $update);
+
+        // Insert into transactions table
+        $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
+                      VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
+        mysqli_query($conn, $insert_tx);
+
+        $message = "<p>Withdrawal successful!</p>";
     }
-
-    if ($amount <= 0) {
-        echo "<script>alert('Amount must be greater than 0'); window.location='withdraw.php';</script>";
-        exit;
-    }
-
-    // Get current balance
-    $bal_query = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
-    $bal_result = mysqli_query($conn, $bal_query);
-    $bal_row = mysqli_fetch_assoc($bal_result);
-
-    $current_balance = $bal_row['balance'];
-
-    if ($amount > $current_balance) {
-        echo "<script>alert('Insufficient balance!'); window.location='withdraw.php';</script>";
-        exit;
-    }
-
-    // Deduct amount
-    $update = "UPDATE accounts 
-               SET balance = balance - $amount 
-               WHERE account_id = $account_id AND user_id = $user_id";
-    mysqli_query($conn, $update);
-
-    // Insert into transactions table
-    $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
-                  VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
-    mysqli_query($conn, $insert_tx);
-
-    $message = "<p style='color:green;'>Withdrawal successful!</p>";
 }
 ?>
 
@@ -165,7 +184,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             text-decoration: underline;
         }
 
-        /* ACCOUNT PREVIEW CARD */
         .account-preview {
             margin-top: 20px;
             padding: 22px;
@@ -180,15 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .account-title {
@@ -257,12 +268,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo "<div class='msg-error'>$message</div>";
             }
         }
+
+        if ($cardFrozen) {
+            echo "<div class='msg-error'>Your card is frozen. You cannot withdraw money.</div>";
+        }
         ?>
 
         <form method="POST">
 
             <label>Select Account</label>
-            <select name="account_id" id="accountSelect" required>
+            <select name="account_id" id="accountSelect" required <?= $cardFrozen ? 'disabled' : '' ?>>
                 <option disabled selected>-- Choose account --</option>
 
                 <?php mysqli_data_seek($result, 0);
@@ -284,13 +299,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <label>Amount (RM)</label>
-            <input type="number" step="0.01" min="0" id="amountInput" name="amount" required>
+            <input type="number" step="0.01" min="0" id="amountInput" name="amount"
+                   required <?= $cardFrozen ? 'disabled' : '' ?>>
 
             <label>Enter PIN</label>
             <input type="password" maxlength="4" minlength="4" name="pin" class="pin-box" placeholder="••••"
-                pattern="\d{4}" required>
+                   pattern="\d{4}" required <?= $cardFrozen ? 'disabled' : '' ?>>
 
-            <button type="submit">Confirm Withdrawal</button>
+            <button type="submit" <?= $cardFrozen ? 'disabled' : '' ?>>Confirm Withdrawal</button>
         </form>
 
         <div class="back">
@@ -299,38 +315,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        const accountSelect = document.getElementById("accountSelect");
-        const previewCard = document.getElementById("previewCard");
-        const previewType = document.getElementById("previewType");
-        const previewBalance = document.getElementById("previewBalance");
-        const balanceBar = document.getElementById("balanceBar");
-        const amountInput = document.getElementById("amountInput");
+        const accountSelect   = document.getElementById("accountSelect");
+        const previewCard     = document.getElementById("previewCard");
+        const previewType     = document.getElementById("previewType");
+        const previewBalance  = document.getElementById("previewBalance");
+        const balanceBar      = document.getElementById("balanceBar");
+        const amountInput     = document.getElementById("amountInput");
 
         let currentBalance = 0;
 
-        accountSelect.addEventListener("change", function () {
-            const selected = this.options[this.selectedIndex];
-            const type = selected.dataset.type;
-            currentBalance = parseFloat(selected.dataset.balance);
+        if (accountSelect) {
+            accountSelect.addEventListener("change", function () {
+                const selected = this.options[this.selectedIndex];
+                const type = selected.dataset.type;
+                currentBalance = parseFloat(selected.dataset.balance);
 
-            previewType.textContent = type;
-            previewBalance.textContent = "Balance: RM " + currentBalance.toFixed(2);
+                previewType.textContent = type;
+                previewBalance.textContent = "Balance: RM " + currentBalance.toFixed(2);
 
-            previewCard.style.display = "block";
-            balanceBar.style.width = "100%";
-        });
+                previewCard.style.display = "block";
+                balanceBar.style.width = "100%";
+            });
+        }
 
-        amountInput.addEventListener("input", function () {
-            const amount = parseFloat(this.value) || 0;
-            let percent = 100 - ((amount / currentBalance) * 100);
+        if (amountInput) {
+            amountInput.addEventListener("input", function () {
+                const amount = parseFloat(this.value) || 0;
+                let percent = 100 - ((amount / currentBalance) * 100);
 
-            if (percent < 0) percent = 0;
-            if (percent > 100) percent = 100;
+                if (percent < 0) percent = 0;
+                if (percent > 100) percent = 100;
 
-            balanceBar.style.width = percent + "%";
-        });
+                balanceBar.style.width = percent + "%";
+            });
+        }
     </script>
 
 </body>
-
 </html>

@@ -8,48 +8,69 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 include 'db_connect.php';
 
-$query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
+/* NEW: check if this user's card is frozen */
+$cardFrozen = false;
+$freeze_query = "SELECT is_frozen FROM cards WHERE user_id = $user_id LIMIT 1";
+$freeze_result = mysqli_query($conn, $freeze_query);
+if ($freeze_result && mysqli_num_rows($freeze_result) > 0) {
+    $freeze_row  = mysqli_fetch_assoc($freeze_result);
+    $cardFrozen  = ((int)$freeze_row['is_frozen'] === 1);
+}
+
+/* Load accounts as before */
+$query    = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
 $accounts = mysqli_query($conn, $query);
 
 $message = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $account_id = $_POST['account_id'];
-    $bill_type = $_POST['bill_type'];
-    $amount = floatval($_POST['amount']);
-    $entered_pin = $_POST['pin'];
+    if ($cardFrozen) {
+        // Do not process payment when card is frozen
+        $message = "<p style='color:red;'>Your card is frozen. You cannot pay bills. Please unfreeze your card first.</p>";
+    } else {
 
-    // PIN CHECK
-    $pin_query = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
-    $pin_result = mysqli_query($conn, $pin_query);
-    $pin_row = mysqli_fetch_assoc($pin_result);
+        $account_id  = $_POST['account_id'];
+        $bill_type   = $_POST['bill_type'];
+        $amount      = floatval($_POST['amount']);
+        $entered_pin = $_POST['pin'];
 
-    if ($entered_pin !== $pin_row['pin']) {
-        $message = "<p style='color:red;'>Incorrect PIN! Payment denied.</p>";
-    } 
-    else if ($amount <= 0) {
-        $message = "<p style='color:red;'>Amount must be greater than 0.</p>";
-    } 
-    else {
-        // CHECK BALANCE
-        $bal_query = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
-        $bal_result = mysqli_query($conn, $bal_query);
-        $bal_row = mysqli_fetch_assoc($bal_result);
+        // PIN CHECK
+        $pin_query  = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
+        $pin_result = mysqli_query($conn, $pin_query);
+        $pin_row    = mysqli_fetch_assoc($pin_result);
 
-        if ($bal_row['balance'] < $amount) {
-            $message = "<p style='color:red;'>Insufficient balance.</p>";
+        if ($entered_pin !== $pin_row['pin']) {
+            $message = "<p style='color:red;'>Incorrect PIN! Payment denied.</p>";
+        } elseif ($amount <= 0) {
+            $message = "<p style='color:red;'>Amount must be greater than 0.</p>";
         } else {
-            // DEDUCT
-            mysqli_query($conn, "UPDATE accounts SET balance = balance - $amount 
-                                 WHERE account_id = $account_id AND user_id = $user_id");
+            // CHECK BALANCE
+            $bal_query  = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
+            $bal_result = mysqli_query($conn, $bal_query);
+            $bal_row    = mysqli_fetch_assoc($bal_result);
 
-            // INSERT RECORD
-            $desc = "Bill Payment - $bill_type";
-            mysqli_query($conn, "INSERT INTO transactions (user_id, account_id, type, amount, description)
-                                 VALUES ($user_id, $account_id, 'Bill Payment', $amount, '$desc')");
+            if ($bal_row['balance'] < $amount) {
+                $message = "<p style='color:red;'>Insufficient balance.</p>";
+            } else {
+                // DEDUCT
+                mysqli_query(
+                    $conn,
+                    "UPDATE accounts 
+                     SET balance = balance - $amount 
+                     WHERE account_id = $account_id AND user_id = $user_id"
+                );
 
-            $message = "<p style='color:green;'>Bill payment successful!</p>";
+                // INSERT RECORD
+                $desc = "Bill Payment - $bill_type";
+                mysqli_query(
+                    $conn,
+                    "INSERT INTO transactions (user_id, account_id, type, amount, description)
+                     VALUES ($user_id, $account_id, 'Bill Payment', $amount, '$desc')"
+                );
+
+                $message = "<p style='color:green;'>Bill payment successful!</p>";
+            }
         }
     }
 }
@@ -210,12 +231,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 echo "<div class='msg-error'>$message</div>";
             }
         }
+
+        if ($cardFrozen) {
+            echo "<div class='msg-error'>Your card is frozen. You cannot pay bills.</div>";
+        }
         ?>
 
         <form method="POST">
 
             <label>Select Account</label>
-            <select name="account_id" required>
+            <select name="account_id" required <?= $cardFrozen ? 'disabled' : '' ?>>
                 <option value="">-- Choose account --</option>
                 <?php while ($acc = mysqli_fetch_assoc($accounts)) { ?>
                     <option value="<?= $acc['account_id']; ?>">
@@ -225,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </select>
 
             <label>Select Bill Type</label>
-            <select name="bill_type" required>
+            <select name="bill_type" required <?= $cardFrozen ? 'disabled' : '' ?>>
                 <option value="">-- Choose Bill --</option>
                 <option value="Electricity">Electricity</option>
                 <option value="Water">Water</option>
@@ -236,13 +261,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </select>
 
             <label>Amount (RM)</label>
-            <input type="number" name="amount" step="0.01" placeholder="Enter payment amount" required>
+            <input type="number" name="amount" step="0.01" placeholder="Enter payment amount"
+                   required <?= $cardFrozen ? 'disabled' : '' ?>>
 
             <label>Enter PIN</label>
-            <input type="password" name="pin" maxlength="4" minlength="4" class="pin-box"
-                   placeholder="••••" pattern="\d{4}" required>
+            <input type="password" name="pin" maxlength="4" minlength="4"
+                   class="pin-box" placeholder="••••" pattern="\d{4}"
+                   required <?= $cardFrozen ? 'disabled' : '' ?>>
 
-            <button type="submit">Pay Bill</button>
+            <button type="submit" <?= $cardFrozen ? 'disabled' : '' ?>>Pay Bill</button>
         </form>
 
         <div class="back">
