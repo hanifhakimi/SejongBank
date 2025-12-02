@@ -52,115 +52,7 @@ $mock_rates = [
 
 $base_currency = 'MYR';
 $base_amount   = 0;
-
-/**
- * Hybrid exchange rates:
- * - App base currency: MYR
- * - Call exchangeratesapi.io for USD, EUR, GBP, JPY (base EUR on API)
- * - Use mock MYR→USD as anchor to convert API data to MYR-based rates
- * - All other currencies use mock MYR-based values
- *
- * Returns: array like [ 'USD' => rate_per_1_MYR, ... ]
- */
-function getExchangeRates($base_currency, $all_currencies, $mock_rates)
-{
-    if ($base_currency !== 'MYR') {
-        return $mock_rates;
-    }
-
-    // Put your real key here
-    $access_key = 'YOUR_ACCESS_KEY_HERE';   // <-- change to your key
-
-    // If no key yet, just use mock data
-    if ($access_key === 'YOUR_ACCESS_KEY_HERE' || trim($access_key) === '') {
-        return $mock_rates;
-    }
-
-    // Currencies we want from API
-    $apiCurrencies = ['USD', 'EUR', 'GBP', 'JPY'];
-    $symbols       = implode(',', $apiCurrencies);
-    $endpoint      = 'latest';
-
-    $url = 'https://api.exchangeratesapi.io/v1/' . $endpoint
-         . '?access_key=' . urlencode($access_key)
-         . '&symbols='   . urlencode($symbols);   // base is EUR in free plan
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10
-    ]);
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($response === false || $httpCode !== 200) {
-        return $mock_rates;
-    }
-
-    $data = json_decode($response, true);
-
-    if (
-        !is_array($data) ||
-        (isset($data['success']) && $data['success'] === false) ||
-        !isset($data['rates']) ||
-        !is_array($data['rates'])
-    ) {
-        return $mock_rates;
-    }
-
-    // 1 EUR = eurRates[CODE] CODE
-    $eurRates = $data['rates'];
-
-    // Need USD from API and MYR→USD from mock as bridge
-    if (!isset($eurRates['USD']) || !isset($mock_rates['USD'])) {
-        return $mock_rates;
-    }
-
-    $usd_per_eur      = (float)$eurRates['USD'];   // 1 EUR = X USD
-    $usd_per_myr_mock = (float)$mock_rates['USD']; // 1 MYR = Y USD (your static value)
-
-    if ($usd_per_eur == 0.0) {
-        return $mock_rates;
-    }
-
-    // 1 MYR = Y USD = Y / usd_per_eur EUR
-    $eur_per_myr = $usd_per_myr_mock / $usd_per_eur;
-
-    $final = [];
-
-    foreach ($all_currencies as $code => $_info) {
-        if ($code === $base_currency) {
-            $final[$code] = 1.0;
-            continue;
-        }
-
-        if (isset($eurRates[$code])) {
-            // Provided by API
-            // 1 EUR = eurRates[code] CODE
-            // 1 MYR = eur_per_myr * eurRates[code] CODE
-            $final[$code] = $eur_per_myr * (float)$eurRates[$code];
-        } elseif (isset($mock_rates[$code])) {
-            // Not in API (e.g. KRW, THB, etc.) → use mock directly
-            $final[$code] = (float)$mock_rates[$code];
-        }
-    }
-
-    // Ensure MYR exists
-    $final[$base_currency] = 1.0;
-
-    if (empty($final)) {
-        return $mock_rates;
-    }
-
-    return $final;
-}
-
-// Get hybrid exchange rates (API + mock)
-$exchange_rates = getExchangeRates($base_currency, $all_currencies, $mock_rates);
-
-// Timestamp for "Last updated"
-$last_updated_ts = time();
+$exchange_rates = $mock_rates;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -168,12 +60,7 @@ $last_updated_ts = time();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Currency Converter</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-
-/* ----------------------------- */
-/* YOUR ORIGINAL CSS — UNCHANGED */
-/* ----------------------------- */
 
 * {
     margin: 0;
@@ -200,15 +87,6 @@ body {
     margin-bottom: 20px;
 }
 
-.last-updated {
-    font-size: 14px;
-    color: #666;
-}
-
-/* ----------------------------- */
-/* BACK TO HOME BUTTON ADDED ONLY */
-/* ----------------------------- */
-
 .home-button {
     display: inline-block;
     margin-top: 20px;
@@ -225,12 +103,6 @@ body {
 .home-button:hover {
     background: #003f7f;
 }
-
-/* ----------------------------- */
-/* END OF ADDED CODE */
-/* ----------------------------- */
-
-/* (continued CSS from Part 1) */
 
 .base-card {
     background: white;
@@ -435,18 +307,11 @@ body {
     color: #999;
 }
 
-</style>
+    </style>
 </head>
 <body>
     <div class="container">
 
-        <!-- Top bar: Home + Last updated -->
-        <div class="top-bar">
-            <!-- THIS PART STAYS EXACTLY AS YOUR ORIGINAL -->
-            <div class="last-updated" id="lastUpdated" data-ts="<?php echo $last_updated_ts; ?>"></div>
-        </div>
-
-        <!-- Base Currency Card -->
         <div class="base-card">
             <div class="currency-header">
                 <div class="flag-icon">
@@ -468,7 +333,6 @@ body {
             >
         </div>
 
-        <!-- Converted Currency Cards -->
         <?php foreach ($_SESSION['selected_currencies'] as $currency): ?>
             <?php if ($currency !== $base_currency && isset($all_currencies[$currency]) && isset($exchange_rates[$currency])): ?>
                 <?php 
@@ -508,21 +372,15 @@ body {
             <?php endif; ?>
         <?php endforeach; ?>
 
-        <!-- Add Currency Button -->
         <button class="add-currency-btn" onclick="openModal()">
             <span style="font-size: 24px;">+</span>
             <span>Add currency</span>
         </button>
 
-        <!-- ------------------------------------------- -->
-        <!-- BACK TO HOME BUTTON (ONLY NEW CODE ADDED) -->
-        <!-- ------------------------------------------- -->
         <a href="home.php" class="home-button">← Back to Home</a>
-        <!-- ------------------------------------------- -->
 
     </div>
 
-    <!-- Add Currency Modal -->
     <div class="modal" id="currencyModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -609,25 +467,9 @@ body {
             if (e.target === this) closeModal();
         });
 
-        function formatLastUpdated() {
-            const el = document.getElementById('lastUpdated');
-            const ts = parseInt(el.dataset.ts, 10);
-            const date = new Date(ts * 1000);
-            const formatted = date.toLocaleString(undefined, {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-            el.textContent = 'Last updated: ' + formatted;
-        }
-
         window.onload = function() {
             const base = document.getElementById('baseAmount');
             if (base) handleCurrencyInput(base);
-            formatLastUpdated();
         };
     </script>
 </body>

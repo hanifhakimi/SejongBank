@@ -41,8 +41,7 @@ if (!$card_number) {
 $cardFrozen = (bool)$is_frozen;
 
 $last4 = substr($card_number, -4);
-$maskedCardNumber = substr($card_number, 0, 4) . ' ' .
-                    substr($card_number, 4, 4) . ' **** ' . $last4;
+$maskedCardNumber = substr($card_number, 0, 4) . ' ' . substr($card_number, 4, 4) . ' **** ' . $last4;
 
 $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
 ?>
@@ -51,7 +50,7 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SejongBank – Virtual Card</title>
+  <title>Card</title>
   <style>
     body {
       margin: 0;
