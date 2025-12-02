@@ -1,14 +1,11 @@
 <?php
-// currency.php - Multi-Currency Converter with Multi-Input Support (Hybrid API + mock)
 
 session_start();
 
-// Get selected currencies from session or use defaults
 if (!isset($_SESSION['selected_currencies'])) {
     $_SESSION['selected_currencies'] = ['USD', 'KRW', 'JPY'];
 }
 
-// Handle add/remove currency
 if (isset($_POST['action'])) {
     if ($_POST['action'] === 'add' && isset($_POST['currency'])) {
         $new_currency = $_POST['currency'];
@@ -24,7 +21,6 @@ if (isset($_POST['action'])) {
     exit;
 }
 
-// List of all available currencies
 $all_currencies = [
     'MYR' => ['name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'flag' => 'flags/MYR.png'],
     'USD' => ['name' => 'US Dollar', 'symbol' => '$', 'flag' => 'flags/USD.png'],
@@ -39,7 +35,6 @@ $all_currencies = [
     'HKD' => ['name' => 'Hong Kong Dollar', 'symbol' => 'HK$', 'flag' => 'flags/HKD.png']
 ];
 
-// Mock exchange rates (per 1 MYR) – used as fallback and for non-API currencies
 $mock_rates = [
     'MYR' => 1.0,
     'USD' => 0.2415,

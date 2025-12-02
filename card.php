@@ -9,7 +9,6 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-/* 1) Handle Freeze/Unfreeze Toggle */
 if (isset($_POST['toggle_freeze'])) {
     $sqlToggle = "UPDATE cards SET is_frozen = 1 - is_frozen WHERE user_id = ?";
     $stmt = $conn->prepare($sqlToggle);
@@ -18,7 +17,6 @@ if (isset($_POST['toggle_freeze'])) {
     $stmt->close();
 }
 
-/* 2) Get card info including freeze status */
 $sql = "SELECT card_number, cardholder_name, valid_until, pin, cvc, is_frozen
         FROM cards
         WHERE user_id = ?
@@ -42,7 +40,6 @@ if (!$card_number) {
 
 $cardFrozen = (bool)$is_frozen;
 
-/* Format Card Number */
 $last4 = substr($card_number, -4);
 $maskedCardNumber = substr($card_number, 0, 4) . ' ' .
                     substr($card_number, 4, 4) . ' **** ' . $last4;
@@ -287,7 +284,6 @@ $fullCardNumberSpaced = trim(chunk_split($card_number, 4, ' '));
     </div>
     <div class="page-title">Virtual Card</div>
 
-    <!-- CARD -->
     <div class="virtual-card <?= $cardFrozen ? 'card-frozen' : '' ?>" id="virtualCard">
       <div class="virtual-card-header">
         <span>Sejong Bank</span>

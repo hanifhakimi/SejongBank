@@ -1,50 +1,5 @@
 <?php
-// wealth.php - SejongBank Wealth Dashboard
 session_start();
-
-// Mock user data - replace with actual session data
-$user_name = $_SESSION['user_name'] ?? 'Abu Bakar';
-
-// API endpoints
-$crypto_apis = [
-    'bitcoin' => 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=myr&days=365',
-    'ethereum' => 'https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=myr&days=365',
-    'ripple' => 'https://api.coingecko.com/api/v3/coins/ripple/market_chart?vs_currency=myr&days=365',
-];
-
-$gold_api = 'https://api.metalpriceapi.com/v1/latest?api_key=YOUR_API_KEY&base=MYR&currencies=XAU';
-
-// Function to fetch data with caching
-function fetchData($url, $cache_file, $cache_time = 300) {
-    if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-        return json_decode(file_get_contents($cache_file), true);
-    }
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    $result = curl_exec($ch);
-    curl_close($ch);
-    
-    if ($result) {
-        file_put_contents($cache_file, $result);
-        return json_decode($result, true);
-    }
-    
-    return null;
-}
-
-// Process time range filter
-$time_range = $_GET['range'] ?? '1y';
-$days_map = [
-    '1d' => 1,
-    '1w' => 7,
-    '1m' => 30,
-    '6m' => 180,
-    '1y' => 365,
-    'all' => 'max'
-];
 ?>
 
 <!DOCTYPE html>
@@ -52,7 +7,7 @@ $days_map = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wealth - SejongBank</title>
+    <title>Wealth</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <style>
@@ -67,33 +22,6 @@ $days_map = [
             background: linear-gradient(135deg, #ff8a80 0%, #ff80ab 100%);
             min-height: 100vh;
             padding: 20px;
-        }
-
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            color: #1976d2;
-            font-size: 24px;
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 20px;
-        }
-
-        .header-nav a {
-            color: #333;
-            text-decoration: none;
-            font-weight: 500;
         }
 
         .container {
@@ -157,26 +85,6 @@ $days_map = [
             font-size: 16px;
             color: #666;
             margin-bottom: 5px;
-        }
-
-        .asset-price {
-            font-size: 32px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .asset-change {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .asset-change.positive {
-            color: #4caf50;
-        }
-
-        .asset-change.negative {
-            color: #f44336;
         }
 
         .chart-container {
@@ -270,35 +178,37 @@ $days_map = [
             margin-bottom: 20px;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .stat-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .stat-box h4 {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .stat-box p {
-            font-size: 20px;
+        .asset-price {
+            font-size: 32px;
             font-weight: bold;
             color: #333;
+            margin-bottom: 10px;
         }
 
-        .loading {
+        .api-error-msg {
             text-align: center;
-            padding: 20px;
-            color: #666;
+            color: #c62828;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
+        .back-home-wrapper {
+            margin-top: 30px;
+        }
+
+        .back-home-btn {
+            display: inline-block;
+            padding: 10px 24px;
+            background: #0056b3;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .back-home-btn:hover {
+            background: #004494;
         }
 
         @media (max-width: 768px) {
@@ -316,19 +226,8 @@ $days_map = [
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>SejongBank | Wealth</h1>
-            <div class="header-nav">
-                <a href="accounts.php">ACCOUNTS</a>
-                <a href="cards.php">CARDS</a>
-                <a href="deposit.php">DEPOSIT</a>
-                <a href="withdraw.php">WITHDRAW</a>
-                <a href="wealth.php" style="color: #1976d2;">WEALTH</a>
-            </div>
-        </div>
 
         <div class="wealth-grid">
-            <!-- Bitcoin Card -->
             <div class="asset-card" onclick="openModal('bitcoin', 'Bitcoin', 'BTC')">
                 <div class="asset-header">
                     <div class="asset-icon bitcoin">₿</div>
@@ -337,16 +236,11 @@ $days_map = [
                         <small>BTC</small>
                     </div>
                 </div>
-                <div class="asset-price" id="btc-price">
-                    <div class="loading">Loading...</div>
-                </div>
-                <div class="asset-change" id="btc-change"></div>
                 <div class="chart-container">
                     <canvas id="btc-chart"></canvas>
                 </div>
             </div>
 
-            <!-- Ethereum Card -->
             <div class="asset-card" onclick="openModal('ethereum', 'Ethereum', 'ETH')">
                 <div class="asset-header">
                     <div class="asset-icon ethereum">Ξ</div>
@@ -355,16 +249,11 @@ $days_map = [
                         <small>ETH</small>
                     </div>
                 </div>
-                <div class="asset-price" id="eth-price">
-                    <div class="loading">Loading...</div>
-                </div>
-                <div class="asset-change" id="eth-change"></div>
                 <div class="chart-container">
                     <canvas id="eth-chart"></canvas>
                 </div>
             </div>
 
-            <!-- Ripple Card -->
             <div class="asset-card" onclick="openModal('ripple', 'Ripple', 'XRP')">
                 <div class="asset-header">
                     <div class="asset-icon ripple">✕</div>
@@ -373,18 +262,17 @@ $days_map = [
                         <small>XRP</small>
                     </div>
                 </div>
-                <div class="asset-price" id="xrp-price">
-                    <div class="loading">Loading...</div>
-                </div>
-                <div class="asset-change" id="xrp-change"></div>
                 <div class="chart-container">
                     <canvas id="xrp-chart"></canvas>
                 </div>
             </div>
         </div>
+
+        <div class="back-home-wrapper">
+            <a href="home.php" class="back-home-btn">← Back to Home</a>
+        </div>
     </div>
 
-    <!-- Modal for detailed view -->
     <div id="assetModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
@@ -396,7 +284,6 @@ $days_map = [
                 </div>
             </div>
             <div class="asset-price" id="modal-price"></div>
-            <div class="asset-change" id="modal-change"></div>
             
             <div class="time-range-selector">
                 <button class="time-btn" onclick="updateTimeRange('1d')">1D</button>
@@ -410,25 +297,6 @@ $days_map = [
             <div class="modal-chart">
                 <canvas id="modal-chart"></canvas>
             </div>
-
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <h4>24h High</h4>
-                    <p id="stat-high">-</p>
-                </div>
-                <div class="stat-box">
-                    <h4>24h Low</h4>
-                    <p id="stat-low">-</p>
-                </div>
-                <div class="stat-box">
-                    <h4>Market Cap</h4>
-                    <p id="stat-mcap">-</p>
-                </div>
-                <div class="stat-box">
-                    <h4>Volume</h4>
-                    <p id="stat-volume">-</p>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -439,96 +307,40 @@ $days_map = [
         let assetCharts = {};
         let assetData = {};
 
-        // Fetch cryptocurrency data with retry
         async function fetchCryptoData(crypto, days = 365) {
             try {
-                // Add a small delay to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
-                const response = await fetch(`https://api.coingecko.com/api/v3/coins/${crypto}/market_chart?vs_currency=myr&days=${days}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
+                const response = await fetch(
+                    `https://api.coingecko.com/api/v3/coins/${crypto}/market_chart?vs_currency=myr&days=${days}`,
+                    {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
                     }
-                });
+                );
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                console.log(`Fetched ${crypto} data:`, data);
                 return data;
             } catch (error) {
                 console.error(`Error fetching ${crypto} data:`, error);
-                // Return mock data as fallback
-                return generateMockData(days);
+                return null;
             }
         }
 
-        // Generate mock data as fallback
-        function generateMockData(days) {
-            const now = Date.now();
-            const prices = [];
-            let basePrice = 100000 + Math.random() * 50000;
-            
-            for (let i = days; i >= 0; i--) {
-                const timestamp = now - (i * 24 * 60 * 60 * 1000);
-                basePrice += (Math.random() - 0.5) * 5000;
-                prices.push([timestamp, Math.max(basePrice, 1000)]);
-            }
-            
-            return { prices };
-        }
-
-        // Fetch current price data
-        async function fetchCurrentPrice(crypto) {
-            try {
-                const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${crypto}&vs_currencies=myr&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                console.log(`Fetched ${crypto} price:`, data);
-                return data[crypto];
-            } catch (error) {
-                console.error(`Error fetching ${crypto} price:`, error);
-                // Return mock price data
-                return {
-                    myr: 100000 + Math.random() * 50000,
-                    myr_24h_change: (Math.random() - 0.5) * 10,
-                    myr_24h_vol: 1000000000,
-                    myr_market_cap: 100000000000
-                };
-            }
-        }
-
-        // Format number to currency
         function formatMYR(num) {
-            return 'RM ' + num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return 'RM ' + num.toLocaleString('en-MY', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
 
-        // Format large numbers
-        function formatLarge(num) {
-            if (num >= 1e9) return 'RM ' + (num / 1e9).toFixed(2) + 'B';
-            if (num >= 1e6) return 'RM ' + (num / 1e6).toFixed(2) + 'M';
-            return formatMYR(num);
-        }
-
-        // Create mini chart
         function createMiniChart(canvasId, data) {
             const ctx = document.getElementById(canvasId);
-            if (!ctx) {
-                console.error(`Canvas ${canvasId} not found`);
-                return;
-            }
+            if (!ctx) return;
             
             const context = ctx.getContext('2d');
             
@@ -536,10 +348,7 @@ $days_map = [
                 assetCharts[canvasId].destroy();
             }
 
-            if (!data || !data.prices || data.prices.length === 0) {
-                console.error(`No price data for ${canvasId}`);
-                return;
-            }
+            if (!data || !data.prices || data.prices.length === 0) return;
 
             const dataPoints = Math.min(30, data.prices.length);
             const prices = data.prices.slice(-dataPoints).map(p => p[1]);
@@ -571,85 +380,50 @@ $days_map = [
                     scales: {
                         x: { display: false },
                         y: { display: false }
-                    },
-                    animation: {
-                        duration: 750
                     }
                 }
             });
-            
-            console.log(`Chart created for ${canvasId}`);
         }
 
-        // Initialize asset
-        async function initAsset(crypto, symbol, priceId, changeId, chartId) {
-            console.log(`Initializing ${crypto}...`);
-            
+        async function initAsset(crypto, chartId) {
             try {
                 const data = await fetchCryptoData(crypto);
-                const priceData = await fetchCurrentPrice(crypto);
-                
-                if (!data || !priceData) {
-                    console.error(`Failed to fetch data for ${crypto}`);
-                    document.getElementById(priceId).innerHTML = '<div class="loading">Unable to load</div>';
+                if (!data || !data.prices || data.prices.length === 0) {
+                    const canvas = document.getElementById(chartId);
+                    if (canvas && canvas.parentElement) {
+                        canvas.parentElement.innerHTML =
+                            '<p class="api-error-msg">Unable to load data (API error)</p>';
+                    }
                     return;
                 }
-                
-                assetData[crypto] = { data, priceData };
-                
-                // Update price
-                const priceElement = document.getElementById(priceId);
-                if (priceElement) {
-                    priceElement.textContent = formatMYR(priceData.myr);
-                }
-                
-                // Update change
-                const change = priceData.myr_24h_change || 0;
-                const changeAmount = Math.abs(change * priceData.myr / 100);
-                const changeEl = document.getElementById(changeId);
-                if (changeEl) {
-                    changeEl.textContent = `${change > 0 ? '+' : ''}RM ${changeAmount.toFixed(2)} (${change.toFixed(2)}%) over 24h`;
-                    changeEl.className = 'asset-change ' + (change >= 0 ? 'positive' : 'negative');
-                }
-                
-                // Create chart
+
+                assetData[crypto] = true;
                 createMiniChart(chartId, data);
-                
-                console.log(`${crypto} initialized successfully`);
             } catch (error) {
                 console.error(`Error initializing ${crypto}:`, error);
-                document.getElementById(priceId).innerHTML = '<div class="loading">Error loading data</div>';
             }
         }
 
-        // Open modal
         function openModal(asset, title, symbol) {
-            console.log(`Opening modal for ${asset}`);
-            
             currentAsset = asset;
             currentTimeRange = '1y';
             
-            // Check if asset data exists
             if (!assetData[asset]) {
-                console.error(`No data available for ${asset}`);
-                alert('Data not yet loaded. Please wait a moment and try again.');
+                alert('Data not yet loaded or API error. Please try again later.');
                 return;
             }
             
             const modal = document.getElementById('assetModal');
             modal.style.display = 'block';
             
-            // Set modal header
             document.getElementById('modal-title').textContent = title;
             document.getElementById('modal-symbol').textContent = symbol;
             
-            // Set icon
             const iconEl = document.getElementById('modal-icon');
             const iconMap = {
                 'bitcoin': { class: 'bitcoin', text: '₿' },
                 'ethereum': { class: 'ethereum', text: 'Ξ' },
-                'ripple': { class: 'ripple', text: '✕' },
-                'gold': { class: 'gold', text: '⚜' }
+                'ripple': { class: 'ripple', text: '✕' }
             };
             
             if (iconMap[asset]) {
@@ -657,111 +431,62 @@ $days_map = [
                 iconEl.textContent = iconMap[asset].text;
             }
             
-            // Reset time range buttons
             document.querySelectorAll('.time-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            document.querySelectorAll('.time-btn')[4].classList.add('active'); // 1Y button
+            document.querySelectorAll('.time-btn')[4].classList.add('active'); // 1Y
             
-            // Load data
             updateModalData();
         }
 
-        // Close modal
         function closeModal() {
             document.getElementById('assetModal').style.display = 'none';
         }
 
-        // Update time range
         function updateTimeRange(range) {
-            console.log(`Changing time range to ${range}`);
             currentTimeRange = range;
             
-            // Update active button
-            document.querySelectorAll('.time-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.time-btn').forEach(btn => { btn.classList.remove('active');});
             event.target.classList.add('active');
             
-            // Reload chart with new time range
             updateModalData();
         }
 
-        // Update modal data
         async function updateModalData() {
-            console.log(`Updating modal for ${currentAsset} with range ${currentTimeRange}`);
-            
             const daysMap = { '1d': 1, '1w': 7, '1m': 30, '6m': 180, '1y': 365, 'all': 'max' };
             const days = daysMap[currentTimeRange];
             
-            // Show loading state
             const chartContainer = document.querySelector('.modal-chart');
-            if (chartContainer) {
-                chartContainer.style.opacity = '0.5';
-            }
+            if (chartContainer) chartContainer.style.opacity = '0.5';
             
             const data = await fetchCryptoData(currentAsset, days);
-            
-            if (!assetData[currentAsset]) {
-                console.error(`No data found for ${currentAsset}`);
+            if (!data || !data.prices || data.prices.length === 0) {
+                document.getElementById('modal-price').textContent =
+                    'Data unavailable (API error)';
+                if (modalChart) {
+                    modalChart.destroy();
+                    modalChart = null;
+                }
+                if (chartContainer) chartContainer.style.opacity = '1';
                 return;
             }
-            
-            const priceData = assetData[currentAsset].priceData;
-            
-            if (data && priceData) {
-                // Update price
-                document.getElementById('modal-price').textContent = formatMYR(priceData.myr);
-                
-                // Update change
-                const change = priceData.myr_24h_change || 0;
-                const changeAmount = Math.abs(change * priceData.myr / 100);
-                const changeEl = document.getElementById('modal-change');
-                changeEl.textContent = `${change > 0 ? '+' : ''}RM ${changeAmount.toFixed(2)} (${change.toFixed(2)}%) over 24h`;
-                changeEl.className = 'asset-change ' + (change >= 0 ? 'positive' : 'negative');
-                
-                // Update stats - calculate from chart data
-                const prices = data.prices.map(p => p[1]);
-                const high24h = Math.max(...prices.slice(-24));
-                const low24h = Math.min(...prices.slice(-24));
-                
-                document.getElementById('stat-high').textContent = formatMYR(high24h);
-                document.getElementById('stat-low').textContent = formatMYR(low24h);
-                document.getElementById('stat-mcap').textContent = formatLarge(priceData.myr_market_cap || 0);
-                document.getElementById('stat-volume').textContent = formatLarge(priceData.myr_24h_vol || 0);
-                
-                // Create chart
-                createModalChart(data);
-                
-                // Remove loading state
-                if (chartContainer) {
-                    chartContainer.style.opacity = '1';
-                }
-                
-                console.log('Modal updated successfully');
-            } else {
-                console.error('Failed to fetch data for modal');
-            }
+
+            const lastPrice = data.prices[data.prices.length - 1][1];
+            document.getElementById('modal-price').textContent = formatMYR(lastPrice);
+
+            createModalChart(data);
+            if (chartContainer) chartContainer.style.opacity = '1';
         }
 
-        // Create modal chart
         function createModalChart(data) {
             const canvas = document.getElementById('modal-chart');
-            if (!canvas) {
-                console.error('Modal chart canvas not found');
-                return;
-            }
+            if (!canvas) return;
             
             const ctx = canvas.getContext('2d');
             
             if (modalChart) {
                 modalChart.destroy();
                 modalChart = null;
-            }
-
-            if (!data || !data.prices || data.prices.length === 0) {
-                console.error('No price data for modal chart');
-                return;
             }
 
             const prices = data.prices.map(p => p[1]);
@@ -802,13 +527,8 @@ $days_map = [
                             backgroundColor: 'rgba(0,0,0,0.8)',
                             padding: 12,
                             displayColors: false,
-                            titleFont: {
-                                size: 14,
-                                weight: 'bold'
-                            },
-                            bodyFont: {
-                                size: 16
-                            },
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 16 },
                             callbacks: {
                                 title: function(context) {
                                     const date = new Date(parseInt(context[0].label));
@@ -833,7 +553,7 @@ $days_map = [
                         x: {
                             type: 'time',
                             time: {
-                                unit: currentTimeRange === '1d' ? 'hour' : 
+                                unit: currentTimeRange === '1d' ? 'hour' :
                                       currentTimeRange === '1w' ? 'day' :
                                       currentTimeRange === '1m' ? 'day' : 'month',
                                 displayFormats: {
@@ -842,9 +562,7 @@ $days_map = [
                                     month: 'MMM yyyy'
                                 }
                             },
-                            grid: {
-                                display: false
-                            },
+                            grid: { display: false },
                             ticks: {
                                 maxRotation: 0,
                                 autoSkipPadding: 20
@@ -859,58 +577,30 @@ $days_map = [
                                     });
                                 }
                             },
-                            grid: {
-                                color: 'rgba(0,0,0,0.05)'
-                            }
+                            grid: { color: 'rgba(0,0,0,0.05)' }
                         }
                     }
                 }
             });
-            
-            console.log('Modal chart created successfully');
         }
 
-        // Initialize all assets with staggered loading
         async function initializeAll() {
-            console.log('Starting initialization...');
-            
-            // Load assets one by one to avoid rate limiting
-            await initAsset('bitcoin', 'BTC', 'btc-price', 'btc-change', 'btc-chart');
+            await initAsset('bitcoin', 'btc-chart');
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            await initAsset('ethereum', 'ETH', 'eth-price', 'eth-change', 'eth-chart');
+            await initAsset('ethereum', 'eth-chart');
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            await initAsset('ripple', 'XRP', 'xrp-price', 'xrp-change', 'xrp-chart');
-            
-            // Initialize gold with mock data
-            initGold();
-            
-            console.log('All assets initialized');
+            await initAsset('ripple', 'xrp-chart');
         }
 
-        // Initialize gold with mock/placeholder data
-        function initGold() {
-            document.getElementById('gold-price').textContent = 'RM 9,245.00';
-            const changeEl = document.getElementById('gold-change');
-            changeEl.textContent = '+RM 125.50 (+1.38%) over 24h';
-            changeEl.className = 'asset-change positive';
-            
-            // Create mock gold chart
-            const mockGoldData = generateMockData(30);
-            createMiniChart('gold-chart', mockGoldData);
-        }
-
-        // Start initialization when page loads
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, initializing assets...');
             initializeAll();
         });
 
-        // Close modal on outside click
         window.onclick = function(event) {
             const modal = document.getElementById('assetModal');
-            if (event.target == modal) {
+            if (event.target === modal) {
                 closeModal();
             }
         }
