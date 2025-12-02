@@ -1,6 +1,6 @@
 <?php
 
-// Generate 12-digit account number
+//generate 12-digit account number randomly
 function generateAccountNumber()
 {
     $num = "";
@@ -10,11 +10,11 @@ function generateAccountNumber()
     return $num;
 }
 
-// Generate UNIQUE 12-digit card number
+//generate unique 12-digit card number
 function generateUniqueCardNumber($conn)
 {
     do {
-        // 16-digit card number
+        //16-digit card number
         $card = "";
         for ($i = 0; $i < 16; $i++) {
             $card .= rand(0, 9);
@@ -36,38 +36,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $phone = $_POST['phone'];
     $email = $_POST['email'];
     $pass  = $_POST['password'];
-    $pin   = $_POST['pin']; // Card PIN
+    $pin   = $_POST['pin']; //card PIN
 
-    // Validate 4-digit PIN
+    //validate & check 4-digit PIN
     if (!preg_match('/^[0-9]{4}$/', $pin)) {
         echo "<script>alert('PIN must be 4 digits!'); window.location='signup.php';</script>";
         exit;
     }
 
-    // Hash login password
-    $hashed = hash("sha256", $pass);
+    $hashed = hash("sha256", $pass); //hash login password
 
-    // Check if email already exists
+    //check if email already exists
     $check = mysqli_query($conn, "SELECT * FROM logins WHERE email='$email'");
     if (mysqli_num_rows($check) > 0) {
         echo "<script>alert('Email already registered!'); window.location='signup.php';</script>";
         exit;
     }
 
-    // Insert into users table
+    //insert user's info into 'users' table
     $insert_user = "INSERT INTO users (full_name, ic_passport, phone)
                     VALUES ('$name', '$ic', '$phone')";
     mysqli_query($conn, $insert_user);
 
-    // Get new user id
-    $user_id = mysqli_insert_id($conn);
+    $user_id = mysqli_insert_id($conn); //get new user id
 
-    // Insert login info
+    //insert user's login info
     $insert_login = "INSERT INTO logins (user_id, email, password_hash)
                      VALUES ($user_id, '$email', '$hashed')";
     mysqli_query($conn, $insert_login);
 
-    // Create 2 default accounts
+    //create 2 default accounts (displayed at home page)
     $wallet = generateAccountNumber();
     $saver  = generateAccountNumber();
 
@@ -77,13 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     mysqli_query($conn, "INSERT INTO accounts (user_id, account_type, account_number, balance)
                          VALUES ($user_id, 'Personal Saver Account-i', '$saver', 0.00)");
 
-    // Create virtual card
+    //create virtual card for each user
     $card_number = generateUniqueCardNumber($conn);
     $valid_years = rand(3, 5);
     $valid_until = date('m/Y', strtotime("+$valid_years years"));
     $cvc = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
 
-    // Insert card
+    //card details
     mysqli_query($conn, "INSERT INTO cards (user_id, card_number, cardholder_name, valid_until, pin, cvc)
                          VALUES ($user_id, '$card_number', '$name', '$valid_until', '$pin', '$cvc')");
 
@@ -206,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                maxlength="14"
                required>
 
-        <!-- Phone: 010-000-0000 -->
+        <!-- phone: 010-000-0000 -->
         <input type="text"
                name="phone"
                id="phone"
@@ -229,7 +227,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <script>
-// Format IC as 000000-00-0000
+//IC format as 000000-00-0000
 function formatIC(value) {
     value = value.replace(/\D/g, '').substring(0, 12);
 
@@ -240,7 +238,7 @@ function formatIC(value) {
     return result;
 }
 
-// Format phone as 010-000-0000
+//phone format as 010-000-0000
 function formatPhone(value) {
     value = value.replace(/\D/g, '').substring(0, 10);
 

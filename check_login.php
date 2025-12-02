@@ -5,11 +5,10 @@ include 'db_connect.php';
 $email = $_POST['email'];
 $password = $_POST['password'];
 
-// Hash the entered password
+//hash the entered password
 $hashed = hash("sha256", $password);
 
-// Check login table
-$query = "SELECT * FROM logins WHERE email='$email' AND password_hash='$hashed'";
+$query = "SELECT * FROM logins WHERE email='$email' AND password_hash='$hashed'"; //login table
 $result = mysqli_query($conn, $query);
 
 if (mysqli_num_rows($result) == 1) {

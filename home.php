@@ -19,7 +19,7 @@ $user_data = mysqli_fetch_assoc($result_user);
 $user_name = $user_data ? $user_data['full_name'] : "User";
 
 
-//get account
+//get user accounts
 $query_accounts = "SELECT account_type, balance, account_number 
                    FROM accounts 
                    WHERE user_id = $user_id";

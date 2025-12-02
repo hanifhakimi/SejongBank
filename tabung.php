@@ -122,13 +122,13 @@ $result = mysqli_query($conn, $query);
 
             <?php while ($p = mysqli_fetch_assoc($result)) {
 
-                // Calculate remaining days
+                //calculate remaining days
                 $remainingText = '-';
                 if (!empty($p['deadline']) && $p['deadline'] !== '0000-00-00') {
                     $today = new DateTime();
                     $deadlineDate = new DateTime($p['deadline']);
                     $diff = $today->diff($deadlineDate);
-                    $days = (int) $diff->format('%r%a'); // signed days
+                    $days = (int) $diff->format('%r%a'); //signed days
             
                     if ($days < 0) {
                         $remainingText = 'Deadline passed';

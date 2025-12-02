@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 include 'db_connect.php';
 
-// Fetch transactions
+//get transaction details
 $query = "SELECT * FROM transactions WHERE user_id = $user_id ORDER BY created_at DESC";
 $result = mysqli_query($conn, $query);
 ?>
@@ -70,19 +70,16 @@ $result = mysqli_query($conn, $query);
 
         .deposit {
             color: #2ecc71;
-            /* green */
             font-weight: bold;
         }
 
         .withdraw {
             color: #e74c3c;
-            /* red */
             font-weight: bold;
         }
 
         .bill {
             color: #2980b9;
-            /* blue */
             font-weight: bold;
         }
 
@@ -123,31 +120,31 @@ $result = mysqli_query($conn, $query);
 
                 while ($row = mysqli_fetch_assoc($result)) {
 
-                    // CASE 1: Deposit
+                    //deposit
                     if ($row['type'] === 'Deposit') {
                         $type_class = "deposit";
                         $type_display = "Deposit";
                     }
 
-                    // CASE 2: Withdrawal
+                    //withdrawal
                     elseif ($row['type'] === 'Withdrawal') {
                         $type_class = "withdraw";
                         $type_display = "Withdrawal";
                     }
 
-                    // CASE 3: Bill payment with proper type
+                    //bill payment with proper type
                     elseif ($row['type'] === 'Bill Payment') {
                         $type_class = "bill";
                         $type_display = "Bill";
                     }
 
-                    // CASE 4: Bill payment saved as NULL (fallback detection)
+                    //bill payment saved as NULL (fallback detection)
                     elseif (empty($row['type']) && strpos($row['description'], 'Bill Payment') !== false) {
                         $type_class = "bill";
                         $type_display = "Bill";
                     }
 
-                    // fallback
+                    //fallback
                     else {
                         $type_class = "";
                         $type_display = $row['type'];

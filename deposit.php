@@ -9,13 +9,12 @@ include 'db_connect.php';
 
 $user_id = $_SESSION['user_id'];
 
-// Fetch user accounts
-$query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
+$query = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id"; //get user account
 $result = mysqli_query($conn, $query);
 
-$message = ""; // store success/error message
+$message = ""; //store success/error message
 
-// Handle deposit form
+//deposit form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $account_id = $_POST['account_id'];
     $amount = floatval($_POST['amount']);
@@ -24,13 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "<p style='color:red;'>Amount must be greater than 0.</p>";
     } else {
 
-        // Update balance
+        //update balance in account
         $update = "UPDATE accounts 
                    SET balance = balance + $amount 
                    WHERE account_id = $account_id AND user_id = $user_id";
         mysqli_query($conn, $update);
 
-        // Insert transaction
+        //insert transaction into database
         $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
                       VALUES ($user_id, $account_id, 'Deposit', $amount, 'Account deposit')";
         mysqli_query($conn, $insert_tx);
@@ -65,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
             animation: fadeIn 0.9s ease;
-            text-align: center; /* center the title + message */
+            text-align: center;
         }
 
         @keyframes fadeIn {
@@ -138,7 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
         }
 
-        /* SUCCESS + ERROR MESSAGE BOXES (same as bill + withdraw) */
         .msg-success {
             color: #0a7a26;
             padding: 10px;
@@ -185,9 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="logo">Sejong<span>Bank</span></div>
         <h2>Deposit Money</h2>
 
-        <!-- Success/Error message -->
         <?php
-        if (!empty($message)) {
+        if (!empty($message)) { //message if success/error
             if (strpos($message, 'successful') !== false) {
                 echo "<div class='msg-success'>$message</div>";
             } else {

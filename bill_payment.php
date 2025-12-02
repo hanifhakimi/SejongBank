@@ -8,8 +8,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 include 'db_connect.php';
 
-/* NEW: check if this user's card is frozen */
-$cardFrozen = false;
+$cardFrozen = false; //check card frozen or not
 $freeze_query = "SELECT is_frozen FROM cards WHERE user_id = $user_id LIMIT 1";
 $freeze_result = mysqli_query($conn, $freeze_query);
 if ($freeze_result && mysqli_num_rows($freeze_result) > 0) {
@@ -17,8 +16,7 @@ if ($freeze_result && mysqli_num_rows($freeze_result) > 0) {
     $cardFrozen  = ((int)$freeze_row['is_frozen'] === 1);
 }
 
-/* Load accounts as before */
-$query    = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
+$query    = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id"; //load account
 $accounts = mysqli_query($conn, $query);
 
 $message = "";
@@ -26,7 +24,7 @@ $message = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($cardFrozen) {
-        // Do not process payment when card is frozen
+        //unable to process payment when card is frozen
         $message = "<p style='color:red;'>Your card is frozen. You cannot pay bills. Please unfreeze your card first.</p>";
     } else {
 
@@ -35,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $amount      = floatval($_POST['amount']);
         $entered_pin = $_POST['pin'];
 
-        // PIN CHECK
+        //check pin number
         $pin_query  = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
         $pin_result = mysqli_query($conn, $pin_query);
         $pin_row    = mysqli_fetch_assoc($pin_result);
@@ -45,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($amount <= 0) {
             $message = "<p style='color:red;'>Amount must be greater than 0.</p>";
         } else {
-            // CHECK BALANCE
+            //check balance
             $bal_query  = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
             $bal_result = mysqli_query($conn, $bal_query);
             $bal_row    = mysqli_fetch_assoc($bal_result);
@@ -53,15 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($bal_row['balance'] < $amount) {
                 $message = "<p style='color:red;'>Insufficient balance.</p>";
             } else {
-                // DEDUCT
+                //deduct money from account after payment made
                 mysqli_query(
                     $conn,
                     "UPDATE accounts 
-                     SET balance = balance - $amount 
+                     SET balance = balance - $amount
                      WHERE account_id = $account_id AND user_id = $user_id"
                 );
 
-                // INSERT RECORD
+                //insert updated balance into database
                 $desc = "Bill Payment - $bill_type";
                 mysqli_query(
                     $conn,
@@ -92,7 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
         }
 
-        /* SAME SIZE AS WITHDRAW.PHP */
         .bill-container {
             width: 420px;
             background: rgba(255, 255, 255, 0.88);
@@ -135,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #333;
         }
 
-        /* SAME INPUT DESIGN AS WITHDRAW.PHP */
         select,
         input {
             width: 100%;

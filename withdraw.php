@@ -9,7 +9,7 @@ include 'db_connect.php';
 
 $user_id = $_SESSION['user_id'];
 
-/* NEW: check if this user's card is frozen */
+/*check if user's card is frozen*/
 $cardFrozen = false;
 $freeze_query = "SELECT is_frozen FROM cards WHERE user_id = $user_id LIMIT 1";
 $freeze_result = mysqli_query($conn, $freeze_query);
@@ -18,25 +18,24 @@ if ($freeze_result && mysqli_num_rows($freeze_result) > 0) {
     $cardFrozen = ((int)$freeze_row['is_frozen'] === 1);
 }
 
-/* Load accounts as before */
+/*load user accounts*/
 $query  = "SELECT account_id, account_type, balance FROM accounts WHERE user_id = $user_id";
 $result = mysqli_query($conn, $query);
 
 $message = "";
 
-/* Handle withdrawal form */
+/*handle withdrawal form*/
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($cardFrozen) {
-        // If card is frozen, do NOT process anything
+        //if card is frozen, no process will be done
         $message = "<p>Your card is frozen. You cannot withdraw money.</p>";
     } else {
 
         $account_id = $_POST['account_id'];
         $amount     = floatval($_POST['amount']);
 
-        // Get user PIN from cards table
-        $pin_query  = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1";
+        $pin_query  = "SELECT pin FROM cards WHERE user_id = $user_id LIMIT 1"; //get user's pin
         $pin_result = mysqli_query($conn, $pin_query);
         $pin_row    = mysqli_fetch_assoc($pin_result);
 
@@ -53,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Get current balance
+        //get current balance from user's acc
         $bal_query  = "SELECT balance FROM accounts WHERE account_id = $account_id AND user_id = $user_id";
         $bal_result = mysqli_query($conn, $bal_query);
         $bal_row    = mysqli_fetch_assoc($bal_result);
@@ -65,13 +64,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Deduct amount
+        //deduct amount from acc
         $update = "UPDATE accounts 
                    SET balance = balance - $amount 
                    WHERE account_id = $account_id AND user_id = $user_id";
         mysqli_query($conn, $update);
 
-        // Insert into transactions table
+        //insert into details into transactions table
         $insert_tx = "INSERT INTO transactions (user_id, account_id, type, amount, description)
                       VALUES ($user_id, $account_id, 'Withdrawal', $amount, 'Account withdrawal')";
         mysqli_query($conn, $insert_tx);

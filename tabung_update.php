@@ -10,7 +10,7 @@ include 'db_connect.php';
 $user_id = (int) $_SESSION['user_id'];
 $piggybank_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-// --- Get tabung info (for display) ---
+//get tabung info (for display)
 $piggy_sql = "SELECT * FROM piggybank 
               WHERE piggybank_id = $piggybank_id AND user_id = $user_id";
 $piggy_res = mysqli_query($conn, $piggy_sql);
@@ -20,7 +20,7 @@ if (!$piggy) {
     die("Tabung not found.");
 }
 
-// --- Get all accounts for this user (Sejong Wallet + Personal Saver) ---
+//get all accounts for this user (Sejong Wallet + Personal Saver)
 $accounts_sql = "SELECT account_id, account_type, account_number, balance
                  FROM accounts
                  WHERE user_id = $user_id";
@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif ($source_account_id <= 0) {
         $error = "Please choose an account.";
     } else {
-        // Get selected account and verify it belongs to this user
+        //get selected account and verify it belongs to this user
         $acc_sql = "SELECT account_id, balance 
                     FROM accounts 
                     WHERE account_id = $source_account_id 
@@ -59,21 +59,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($current_balance < $amount) {
                 $error = "Insufficient balance in selected account.";
             } else {
-                // Deduct from account, add to tabung, and insert transaction
                 mysqli_begin_transaction($conn);
 
-                // 1) Deduct from selected account
+                //1) deduct from selected account
                 $update_account = "UPDATE accounts
                                    SET balance = balance - $amount
                                    WHERE account_id = " . (int) $account['account_id'];
 
-                // 2) Add to piggybank
+                //2) add to piggybank
                 $update_piggy = "UPDATE piggybank
                                  SET current_amount = current_amount + $amount
                                  WHERE piggybank_id = $piggybank_id
                                    AND user_id = $user_id";
 
-                // 3) Insert into transactions (for history)
+                //3) insert into transactions (for history)
                 $tx_type = 'Withdrawal'; // must match ENUM
                 $desc_text = 'Transfer to Tabung: ' . $piggy['piggybank_name'];
                 $desc = mysqli_real_escape_string($conn, $desc_text);
